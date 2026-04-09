@@ -53,7 +53,7 @@
 | P-049 | Flutter client backend 연결 | DONE | P-048 | remote client |
 | P-050 | 실채널 1차 설계 문서화 | DONE | P-049 | live channel design |
 | P-051 | v1.1 검증 및 문서 반영 | DONE | P-050 | verification + docs |
-| P-052 | GitHub 커밋/푸시 반영 | BLOCKED | P-051 | local commit + push blocker note |
+| P-052 | GitHub 커밋/푸시 반영 | DONE | P-051 | local commit + remote push |
 
 ## Status Legend
 
@@ -101,6 +101,7 @@
   backend-connected client mode가 구현됐다.
 - 실채널 연동 1차 설계는
   Telegram 우선, WhatsApp notification + 제한형 command 기준으로 문서화했다.
-- 2026-04-09 커밋/푸시 요청이 들어왔지만
-  현재 저장소에는 `origin` remote가 없어서
-  push는 blocker 상태다.
+- 2026-04-09 커밋/푸시 요청 기준으로
+  초기에는 `origin` remote 부재가 blocker였지만,
+  이후 `jbak2588/mozzy-ai-team` remote 연결과
+  `main` push까지 완료했다.

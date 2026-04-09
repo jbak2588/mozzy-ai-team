@@ -426,6 +426,18 @@
   잘못된 대상에 push하는 것이 더 위험하기 때문이다.
 * **Status:** ACTIVE
 
+### D-038
+
+* **Topic:** 현재 저장소의 GitHub publish target
+* **Decision:** 현재 `mozzy-ai-team` 작업 저장소의
+  canonical GitHub remote는
+  `https://github.com/jbak2588/mozzy-ai-team.git`로 둔다.
+  기본 publish branch는 `main`이다.
+* **Reason:** 사용자가 대상 repository를 생성했고,
+  local root commit과 후속 문서 반영 commit을
+  이 remote의 `main`으로 push했기 때문이다.
+* **Status:** ACTIVE
+
 ---
 
 ## Open Questions
