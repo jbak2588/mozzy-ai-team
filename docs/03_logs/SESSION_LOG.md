@@ -464,3 +464,277 @@
 - Next:
   - 필요 시 다음 단계로
     Telegram 실연동 구현을 진행한다
+
+### Session 022
+
+- Goal: Telegram 실연동 v1.2 계획 반영, 코드 구현, 검증 완료
+- Actions:
+  - `EXECUTION_PLAN.md`, `TASK_QUEUE.md`, `CONSENSUS.md`에
+    Telegram 실연동 v1.2 범위와 비프로덕션 제약을 반영
+  - `HNI_TELEGRAM_V12_SCOPE.md`를 작성하고
+    `HNI_CHANNEL_LIVE_INTEGRATION_PHASE1.md`,
+    앱 `README.md`를 실제 구현 상태에 맞게 갱신
+  - `telegram_integration.dart`를 추가해
+    env 기반 Telegram config,
+    Bot API client,
+    webhook status helper,
+    update normalizer,
+    sender policy evaluator,
+    reply/completion summary dispatcher를 구현
+  - `backend_service.dart`, `models.dart`, `server.dart`, `app.dart`를 수정해
+    Telegram webhook/status/set-webhook/delete-webhook route,
+    sender metadata 저장,
+    command log 표시,
+    completion summary dispatch를 연결
+  - `telegram_integration_test.dart`를 추가해
+    webhook 생성, privileged approve, 권한 거부,
+    secret mismatch를 검증
+  - `dart format`, `flutter analyze`, `flutter test`,
+    `markdownlint-cli@0.40.0 '**/*.md'`로 검증
+- Result:
+  - HNI auto-company backend가
+    Telegram command channel을 실제 webhook ingress로 받을 수 있는
+    v1.2 상태로 확장됨
+  - Telegram 명령은
+    backend sender policy를 통과한 뒤
+    기존 work-order command 경로로 정규화됨
+  - Telegram에서 생성된 order는
+    완료 시 같은 chat으로 completion summary를 다시 발송함
+  - production webhook 개통 없이도
+    로컬/비프로덕션에서 검증 가능한 live integration 경로가 준비됨
+- Next:
+  - 필요 시 다음 단계로
+    Telegram public webhook 개통 준비 문서화 또는
+    WhatsApp notification-only 실연동으로 이어간다
+
+### Session 023
+
+- Goal: 테스트 구동 중 확인된 루트 context 예외 수정
+- Actions:
+  - 디버그 콘솔의
+    `No ScaffoldMessenger widget found` 예외를 기준으로
+    `app.dart`의 snackbar/dialog 호출 경로를 재검토
+  - `HniAutoCompanyApp`에
+    `scaffoldMessengerKey`, `navigatorKey`를 추가하고
+    루트 state의 바깥 `context` 대신
+    key 기반 경로로 snackbar와 dialog를 호출하도록 수정
+  - `TopHeader`, `Channel Simulator`,
+    create-order dialog의 dropdown 배치를 조정해
+    widget test 중 발생하던 overflow를 함께 제거
+  - `app_widget_test.dart`를 추가해
+    channel snackbar와 new-order dialog가
+    예외 없이 열리는지 회귀 검증
+  - `flutter test`로 전체 테스트 통과를 확인
+- Result:
+  - `No ScaffoldMessenger widget found` 예외가 재현 기준으로 해소됨
+  - 루트 앱 action이
+    app-shell 내부 `Navigator`/`ScaffoldMessenger`에 안전하게 연결됨
+  - widget test 기준의 layout overflow도 함께 정리됨
+- Next:
+  - 필요 시 다음 단계로
+    이 수정분을 GitHub commit/push한다
+
+### Session 024
+
+- Goal: Telegram 연결 확인 절차 정리 및 대시보드 14-agent 가시화
+- Actions:
+  - `EXECUTION_PLAN.md`, `TASK_QUEUE.md`, `CONSENSUS.md`,
+    `HNI_DASHBOARD_FLUTTER_IA.md`에
+    Telegram 확인 절차와 14-agent board 범위를 반영
+  - `README.md`의 Telegram live mode 아래에
+    status endpoint, set-webhook, `/help` roundtrip,
+    dashboard command log를 기준으로 한
+    연결 확인 절차를 추가
+  - `app.dart`에
+    14-agent 정적 디렉터리와
+    Home `14-Agent Board` UI를 구현
+  - `app_widget_test.dart`에
+    `14-Agent Board`가 실제로 보이는지 회귀 테스트를 추가
+  - `flutter analyze`, `flutter test`,
+    `markdownlint-cli@0.40.0 '**/*.md'`로 검증
+- Result:
+  - 사용자가 Telegram 연결 여부를
+    status 조회와 command roundtrip 기준으로 판단할 수 있게 됨
+  - Home dashboard에서
+    HNI의 14개 advisory persona를 한눈에 볼 수 있게 됨
+  - 기존 Telegram/widget 회귀와 함께
+    새 agent board 표시도 테스트로 확인됨
+- Next:
+  - 필요 시 다음 단계로
+    이 변경분을 GitHub commit/push한다
+
+### Session 025
+
+- Goal: 사용자 Telegram 계정 기준의 실제 연결 방법 안내와 runtime 상태 점검
+- Actions:
+  - 사용자 첨부 이미지에서
+    표시 이름 `JaeHyun Park`와
+    전화번호 `+62 852 81562588`를 확인
+  - 현재 shell env의
+    `HNI_TELEGRAM_BOT_TOKEN`,
+    `HNI_TELEGRAM_WEBHOOK_SECRET`,
+    `HNI_TELEGRAM_WEBHOOK_BASE_URL`,
+    sender allowlist 값 유무를 점검
+  - `curl http://127.0.0.1:8787/api/v1/integrations/telegram/status`와
+    `lsof -iTCP:8787`로
+    backend runtime 상태를 점검
+  - 구현 기준상
+    Telegram 연동은 개인 계정을 직접 API에 묶는 것이 아니라
+    bot token + webhook + sender/chat allowlist 구조라는 점을
+    운영 해석으로 정리
+- Result:
+  - 현재 환경에서는
+    Telegram bot token/webhook 관련 env가 모두 unset 상태였고,
+    backend `127.0.0.1:8787`도 미기동이라
+    API가 연결됐다고 볼 수 없음을 확인
+  - 사용자 계정은
+    bot과 대화하는 sender로 연결되어야 하며,
+    전화번호 자체는 현재 구현의 allowlist 키가 아님을 확인
+- Next:
+  - 필요 시 다음 단계로
+    BotFather bot 생성, env 주입, webhook 등록까지 실제 연결 작업을 진행한다
+
+### Session 026
+
+- Goal: 실 Telegram bot token 기준의 live 검증과 계정 바인딩 가이드 정리
+- Actions:
+  - 사용자 제공 bot token으로
+    Telegram Bot API `getMe`, `getWebhookInfo`, `getUpdates`를 호출해
+    bot 유효성, webhook 상태, 사용자 메시지 유입 여부를 점검
+  - shell runtime에만
+    token과 임시 webhook secret을 주입해
+    `dart run bin/server.dart`를 기동하고
+    `/api/v1/integrations/telegram/status` 응답을 확인
+  - `README.md`에
+    `@hni_mozzy_bot` 기준의 계정 바인딩 절차와
+    username/sender_id allowlist 설정 순서를 추가
+  - 실 token은
+    repo/문서에 남기지 않는 운영 규칙을
+    합의 문서에 반영
+- Result:
+  - `@hni_mozzy_bot` token이 유효하고,
+    HNI backend status endpoint도
+    `configured: true`, `status: ready`로 응답함을 확인
+  - Telegram 측 webhook URL은 아직 비어 있고,
+    `getUpdates`도 `0`건이라
+    사용자의 개인 계정 sender binding은 아직 완료되지 않았음을 확인
+  - 따라서 현재 상태는
+    "Bot API 연결 성공 / backend 연동 성공 / 개인 계정 바인딩 대기"로 정리됨
+- Next:
+  - 사용자가 `@hni_mozzy_bot`에 먼저 메시지를 보내고,
+    그 뒤 `username` 또는 `sender_id`를 allowlist에 반영한다
+  - public webhook 또는 polling mode가 필요하면
+    별도 승인 후 다음 범위로 진행한다
+
+### Session 027
+
+- Goal: 첨부 이미지 기준 Telegram bot direct message 실수신 여부 확인
+- Actions:
+  - 사용자 첨부 이미지에서
+    `@hni_mozzy_bot` chat에 `/start`, `halo`가 전송된 상태를 확인
+  - Telegram Bot API `getWebhookInfo`로
+    현재 webhook이 비어 있고
+    pending update가 누적되는지 점검
+  - Telegram Bot API `getUpdates`로
+    실제 private message update가 존재하는지 확인
+- Result:
+  - 사용자 계정의 direct message가
+    Telegram bot update queue까지 실제로 도달했음을 확인
+  - 따라서 bot과 개인 계정 사이의
+    1차 sender binding evidence는 확보됐다
+  - 그러나 현재 HNI app은 webhook ingress 기준이라
+    public HTTPS webhook 또는 polling path 없이는
+    이 메시지가 backend command log/reply로 이어지지 않는다
+- Next:
+  - 필요 시 다음 단계로
+    sender/chat allowlist 값을 실제 env에 반영한다
+  - public webhook 또는 polling mode 중
+    하나를 선택해 backend inbound를 완성한다
+
+### Session 028
+
+- Goal: Telegram polling mode 구현과 bot handle 해석 정리
+- Actions:
+  - `@hni_mozzy_bot`는
+    target bot handle로 유지하되,
+    sender authorization은
+    여전히 사용자 `sender_id`/`chat_id`를 기준으로 본다는 점을
+    합의 문서에 기록
+  - `telegram_integration.dart`에
+    polling env와 `getUpdates` client 경로를 추가
+  - `backend_service.dart`에
+    polling loop, `poll-once` helper,
+    polling status/cursor 반영,
+    webhook/polling 공용 Telegram payload 처리 경로를 추가
+  - `README.md`와
+    `HNI_TELEGRAM_V12_SCOPE.md`에
+    polling mode와 public webhook 전제조건을 정리
+  - `telegram_integration_test.dart`에
+    queued update 기반 polling 검증을 추가
+  - git 추적 밖의
+    `.hni_auto_company/telegram.local.env`를 만들어
+    실 bot token, sender/chat id, polling env를 로컬 runtime에 적용
+- Result:
+  - public webhook 없이도
+    Telegram direct message를 backend command로 intake할 수 있는
+    polling mode가 구현됨
+  - Telegram status endpoint에서
+    polling enabled/active/cursor 정보를 함께 확인할 수 있게 됨
+  - `@hni_mozzy_bot`는
+    bot handle이고 sender allowlist username이 아니라는 점을
+    운영 규칙으로 고정함
+  - 실 연결값은
+    git 추적 밖 로컬 env 파일로만 보관되도록 정리함
+- Next:
+  - 필요 시 다음 단계로
+    polling roundtrip을 직접 검증한다
+  - public webhook을 원하면
+    public HTTPS URL, TLS, reverse proxy 기준으로 다음 범위를 진행한다
+
+### Session 029
+
+- Goal: Telegram polling live roundtrip 직접 검증
+- Actions:
+  - git 추적 밖 로컬 env를 사용하되
+    기존 사용자 state를 건드리지 않도록
+    임시 backend state 파일로 server를 실행
+  - Telegram pending update `2`건(`/start`, `halo`)이 있는 상태를 확인
+  - `POST /api/v1/integrations/telegram/poll-once`로
+    두 update를 실제 처리하고
+    command log와 polling cursor를 확인
+  - 같은 private chat `5290546807`로
+    Telegram Bot API `sendMessage`를 직접 호출해
+    outbound delivery를 확인
+- Result:
+  - polling helper가 pending update `2`건을 실제 intake했고,
+    backend command log에
+    `senderId/chatId = 5290546807`와 함께
+    `Unknown command. Try /help` 결과가 기록됨
+  - polling cursor가 `186781256`으로 전진했고,
+    같은 offset 기준 `getUpdates`는 빈 결과를 반환함
+  - outbound verification message도
+    `ok: true`, `message_id: 5`로 성공해
+    live roundtrip이 성립함을 확인
+- Next:
+  - 필요 시 다음 단계로
+    background polling mode 기준의 추가 live command를 검증한다
+  - 또는 public webhook 구성을 진행한다
+
+### Session 030
+
+- Goal: Telegram/polling 변경분 GitHub commit + push
+- Actions:
+  - 현재 staged 변경 범위를
+    Telegram v1.2, polling mode, dashboard/README/spec/test,
+    macOS workspace sync까지 포함하는 publish scope로 정리
+  - `.hni_auto_company/telegram.local.env`는
+    local-only secret 파일이라
+    git publish 대상에서 계속 제외
+  - 변경분을 commit하고
+    `origin/main`으로 push
+- Result:
+  - 현재 Telegram/polling 변경분이
+    GitHub remote에 반영됨
+- Next:
+  - 필요 시 다음 단계로
+    public webhook 구성 또는 추가 live command 검증으로 이어간다

@@ -10,14 +10,14 @@ enum OrderStatus {
 
 extension OrderStatusX on OrderStatus {
   String get label => switch (this) {
-        OrderStatus.approvalPending => 'Approval Pending',
-        OrderStatus.planned => 'Planned',
-        OrderStatus.inProgress => 'In Progress',
-        OrderStatus.evaluation => 'Evaluation',
-        OrderStatus.revise => 'Revise',
-        OrderStatus.completed => 'Completed',
-        OrderStatus.hold => 'Hold',
-      };
+    OrderStatus.approvalPending => 'Approval Pending',
+    OrderStatus.planned => 'Planned',
+    OrderStatus.inProgress => 'In Progress',
+    OrderStatus.evaluation => 'Evaluation',
+    OrderStatus.revise => 'Revise',
+    OrderStatus.completed => 'Completed',
+    OrderStatus.hold => 'Hold',
+  };
 }
 
 enum ExecutionStage {
@@ -31,54 +31,54 @@ enum ExecutionStage {
 
 extension ExecutionStageX on ExecutionStage {
   String get label => switch (this) {
-        ExecutionStage.strategicReview => 'Strategic Review',
-        ExecutionStage.planning => 'Planned',
-        ExecutionStage.execution => 'Execution',
-        ExecutionStage.evaluation => 'Evaluation',
-        ExecutionStage.revision => 'Revision',
-        ExecutionStage.completion => 'Completion',
-      };
+    ExecutionStage.strategicReview => 'Strategic Review',
+    ExecutionStage.planning => 'Planned',
+    ExecutionStage.execution => 'Execution',
+    ExecutionStage.evaluation => 'Evaluation',
+    ExecutionStage.revision => 'Revision',
+    ExecutionStage.completion => 'Completion',
+  };
 }
 
 enum StageState { pending, running, completed, skipped }
 
 extension StageStateX on StageState {
   String get label => switch (this) {
-        StageState.pending => 'Pending',
-        StageState.running => 'Running',
-        StageState.completed => 'Completed',
-        StageState.skipped => 'Skipped',
-      };
+    StageState.pending => 'Pending',
+    StageState.running => 'Running',
+    StageState.completed => 'Completed',
+    StageState.skipped => 'Skipped',
+  };
 }
 
 enum ApprovalType { plan, risk }
 
 extension ApprovalTypeX on ApprovalType {
   String get label => switch (this) {
-        ApprovalType.plan => 'Plan Approval',
-        ApprovalType.risk => 'Risk Gate',
-      };
+    ApprovalType.plan => 'Plan Approval',
+    ApprovalType.risk => 'Risk Gate',
+  };
 }
 
 enum ApprovalStatus { pending, approved, held, rejected }
 
 extension ApprovalStatusX on ApprovalStatus {
   String get label => switch (this) {
-        ApprovalStatus.pending => 'Pending',
-        ApprovalStatus.approved => 'Approved',
-        ApprovalStatus.held => 'Held',
-        ApprovalStatus.rejected => 'Rejected',
-      };
+    ApprovalStatus.pending => 'Pending',
+    ApprovalStatus.approved => 'Approved',
+    ApprovalStatus.held => 'Held',
+    ApprovalStatus.rejected => 'Rejected',
+  };
 }
 
 enum CommandChannel { dashboard, telegram, whatsapp }
 
 extension CommandChannelX on CommandChannel {
   String get label => switch (this) {
-        CommandChannel.dashboard => 'Dashboard',
-        CommandChannel.telegram => 'Telegram',
-        CommandChannel.whatsapp => 'WhatsApp',
-      };
+    CommandChannel.dashboard => 'Dashboard',
+    CommandChannel.telegram => 'Telegram',
+    CommandChannel.whatsapp => 'WhatsApp',
+  };
 }
 
 class RiskProfile {
@@ -118,13 +118,13 @@ class RiskProfile {
   }
 
   Map<String, dynamic> toJson() => {
-        'scopeExpansion': scopeExpansion,
-        'production': production,
-        'security': security,
-        'privacy': privacy,
-        'payment': payment,
-        'destructive': destructive,
-      };
+    'scopeExpansion': scopeExpansion,
+    'production': production,
+    'security': security,
+    'privacy': privacy,
+    'payment': payment,
+    'destructive': destructive,
+  };
 
   factory RiskProfile.fromJson(Map<String, dynamic>? json) {
     if (json == null) {
@@ -157,12 +157,12 @@ class StageRecord {
   DateTime? endedAt;
 
   Map<String, dynamic> toJson() => {
-        'stage': stage.name,
-        'state': state.name,
-        'summary': summary,
-        'startedAt': startedAt?.toIso8601String(),
-        'endedAt': endedAt?.toIso8601String(),
-      };
+    'stage': stage.name,
+    'state': state.name,
+    'summary': summary,
+    'startedAt': startedAt?.toIso8601String(),
+    'endedAt': endedAt?.toIso8601String(),
+  };
 
   factory StageRecord.fromJson(Map<String, dynamic> json) {
     return StageRecord(
@@ -201,17 +201,17 @@ class ReportEntry {
   DateTime createdAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'orderId': orderId,
-        'stage': stage.name,
-        'title': title,
-        'summary': summary,
-        'findings': findings,
-        'recommendations': recommendations,
-        'ownerGroup': ownerGroup,
-        'personaLead': personaLead,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'orderId': orderId,
+    'stage': stage.name,
+    'title': title,
+    'summary': summary,
+    'findings': findings,
+    'recommendations': recommendations,
+    'ownerGroup': ownerGroup,
+    'personaLead': personaLead,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory ReportEntry.fromJson(Map<String, dynamic> json) {
     return ReportEntry(
@@ -253,14 +253,14 @@ class ApprovalRecord {
   DateTime? resolvedAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'orderId': orderId,
-        'type': type.name,
-        'status': status.name,
-        'note': note,
-        'createdAt': createdAt.toIso8601String(),
-        'resolvedAt': resolvedAt?.toIso8601String(),
-      };
+    'id': id,
+    'orderId': orderId,
+    'type': type.name,
+    'status': status.name,
+    'note': note,
+    'createdAt': createdAt.toIso8601String(),
+    'resolvedAt': resolvedAt?.toIso8601String(),
+  };
 
   factory ApprovalRecord.fromJson(Map<String, dynamic> json) {
     return ApprovalRecord(
@@ -289,11 +289,11 @@ class AuditEntry {
   DateTime createdAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'orderId': orderId,
-        'message': message,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'orderId': orderId,
+    'message': message,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory AuditEntry.fromJson(Map<String, dynamic> json) {
     return AuditEntry(
@@ -312,6 +312,9 @@ class CommandLogEntry {
     required this.input,
     required this.result,
     required this.createdAt,
+    this.senderLabel,
+    this.senderId,
+    this.chatId,
   });
 
   String id;
@@ -319,14 +322,20 @@ class CommandLogEntry {
   String input;
   String result;
   DateTime createdAt;
+  String? senderLabel;
+  String? senderId;
+  String? chatId;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'channel': channel.name,
-        'input': input,
-        'result': result,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'channel': channel.name,
+    'input': input,
+    'result': result,
+    'createdAt': createdAt.toIso8601String(),
+    'senderLabel': senderLabel,
+    'senderId': senderId,
+    'chatId': chatId,
+  };
 
   factory CommandLogEntry.fromJson(Map<String, dynamic> json) {
     return CommandLogEntry(
@@ -335,6 +344,9 @@ class CommandLogEntry {
       input: json['input'] as String? ?? '',
       result: json['result'] as String? ?? '',
       createdAt: _dateFromJson(json['createdAt']) ?? DateTime.now(),
+      senderLabel: json['senderLabel'] as String?,
+      senderId: json['senderId'] as String?,
+      chatId: json['chatId'] as String?,
     );
   }
 }
@@ -359,6 +371,9 @@ class WorkOrder {
     required this.reports,
     required this.approvals,
     required this.auditTrail,
+    this.sourceChatId,
+    this.sourceSenderId,
+    this.sourceUsername,
   });
 
   String id;
@@ -379,6 +394,9 @@ class WorkOrder {
   List<ReportEntry> reports;
   List<ApprovalRecord> approvals;
   List<AuditEntry> auditTrail;
+  String? sourceChatId;
+  String? sourceSenderId;
+  String? sourceUsername;
 
   ApprovalRecord? pendingApproval(ApprovalType type) {
     for (final approval in approvals) {
@@ -405,25 +423,28 @@ class WorkOrder {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'objective': objective,
-        'targetProduct': targetProduct,
-        'targetBranch': targetBranch,
-        'requestedBy': requestedBy,
-        'sourceChannel': sourceChannel.name,
-        'assignedSquad': assignedSquad,
-        'status': status.name,
-        'planSummary': planSummary,
-        'riskProfile': riskProfile.toJson(),
-        'planApproved': planApproved,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-        'stageRecords': stageRecords.map((item) => item.toJson()).toList(),
-        'reports': reports.map((item) => item.toJson()).toList(),
-        'approvals': approvals.map((item) => item.toJson()).toList(),
-        'auditTrail': auditTrail.map((item) => item.toJson()).toList(),
-      };
+    'id': id,
+    'title': title,
+    'objective': objective,
+    'targetProduct': targetProduct,
+    'targetBranch': targetBranch,
+    'requestedBy': requestedBy,
+    'sourceChannel': sourceChannel.name,
+    'assignedSquad': assignedSquad,
+    'status': status.name,
+    'planSummary': planSummary,
+    'riskProfile': riskProfile.toJson(),
+    'planApproved': planApproved,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'stageRecords': stageRecords.map((item) => item.toJson()).toList(),
+    'reports': reports.map((item) => item.toJson()).toList(),
+    'approvals': approvals.map((item) => item.toJson()).toList(),
+    'auditTrail': auditTrail.map((item) => item.toJson()).toList(),
+    'sourceChatId': sourceChatId,
+    'sourceSenderId': sourceSenderId,
+    'sourceUsername': sourceUsername,
+  };
 
   factory WorkOrder.fromJson(Map<String, dynamic> json) {
     return WorkOrder(
@@ -457,6 +478,9 @@ class WorkOrder {
       auditTrail: (json['auditTrail'] as List<dynamic>? ?? const [])
           .map((item) => AuditEntry.fromJson(item as Map<String, dynamic>))
           .toList(),
+      sourceChatId: json['sourceChatId'] as String?,
+      sourceSenderId: json['sourceSenderId'] as String?,
+      sourceUsername: json['sourceUsername'] as String?,
     );
   }
 }
@@ -466,17 +490,20 @@ class AppSnapshot {
     required this.orders,
     required this.commandLogs,
     this.selectedOrderId,
+    this.telegramPollingOffset,
   });
 
   List<WorkOrder> orders;
   List<CommandLogEntry> commandLogs;
   String? selectedOrderId;
+  int? telegramPollingOffset;
 
   Map<String, dynamic> toJson() => {
-        'orders': orders.map((item) => item.toJson()).toList(),
-        'commandLogs': commandLogs.map((item) => item.toJson()).toList(),
-        'selectedOrderId': selectedOrderId,
-      };
+    'orders': orders.map((item) => item.toJson()).toList(),
+    'commandLogs': commandLogs.map((item) => item.toJson()).toList(),
+    'selectedOrderId': selectedOrderId,
+    'telegramPollingOffset': telegramPollingOffset,
+  };
 
   factory AppSnapshot.fromJson(Map<String, dynamic> json) {
     return AppSnapshot(
@@ -487,6 +514,7 @@ class AppSnapshot {
           .map((item) => CommandLogEntry.fromJson(item as Map<String, dynamic>))
           .toList(),
       selectedOrderId: json['selectedOrderId'] as String?,
+      telegramPollingOffset: (json['telegramPollingOffset'] as num?)?.toInt(),
     );
   }
 
@@ -503,6 +531,9 @@ class OrderDraft {
     required this.sourceChannel,
     required this.assignedSquad,
     required this.riskProfile,
+    this.sourceChatId,
+    this.sourceSenderId,
+    this.sourceUsername,
   });
 
   final String title;
@@ -513,17 +544,23 @@ class OrderDraft {
   final CommandChannel sourceChannel;
   final String assignedSquad;
   final RiskProfile riskProfile;
+  final String? sourceChatId;
+  final String? sourceSenderId;
+  final String? sourceUsername;
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'objective': objective,
-        'targetProduct': targetProduct,
-        'targetBranch': targetBranch,
-        'requestedBy': requestedBy,
-        'sourceChannel': sourceChannel.name,
-        'assignedSquad': assignedSquad,
-        'riskProfile': riskProfile.toJson(),
-      };
+    'title': title,
+    'objective': objective,
+    'targetProduct': targetProduct,
+    'targetBranch': targetBranch,
+    'requestedBy': requestedBy,
+    'sourceChannel': sourceChannel.name,
+    'assignedSquad': assignedSquad,
+    'riskProfile': riskProfile.toJson(),
+    'sourceChatId': sourceChatId,
+    'sourceSenderId': sourceSenderId,
+    'sourceUsername': sourceUsername,
+  };
 
   factory OrderDraft.fromJson(Map<String, dynamic> json) {
     return OrderDraft(
@@ -539,15 +576,15 @@ class OrderDraft {
       riskProfile: RiskProfile.fromJson(
         json['riskProfile'] as Map<String, dynamic>?,
       ),
+      sourceChatId: json['sourceChatId'] as String?,
+      sourceSenderId: json['sourceSenderId'] as String?,
+      sourceUsername: json['sourceUsername'] as String?,
     );
   }
 }
 
 class PendingApprovalItem {
-  PendingApprovalItem({
-    required this.order,
-    required this.approval,
-  });
+  PendingApprovalItem({required this.order, required this.approval});
 
   final WorkOrder order;
   final ApprovalRecord approval;

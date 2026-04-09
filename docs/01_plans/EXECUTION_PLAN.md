@@ -10,7 +10,10 @@ Humantric Net Indonesia용 Auto-Company 평가 및
 Mozzy 14-Agent 운영체계 설계 및
 HNI auto-company 최소 실행 MVP 구현 및
 backend-connected v1.1 완성과
-실채널 연동 1차 설계
+실채널 연동 1차 설계 및
+Telegram 실연동 v1.2 구현 및
+대시보드 14-agent 가시화 및
+Telegram polling mode 구현
 
 ## Objective
 
@@ -31,6 +34,11 @@ backend-connected v1.1 완성과
 이어 HNI auto-company 최소 실행 MVP를 구현한다.
 이어 backend-connected v1.1 MVP를 완성한다.
 이어 실채널 연동 1차 설계를 정리한다.
+이어 Telegram 실연동 v1.2를 구현한다.
+이어 Telegram 연결 확인 절차를 정리하고
+대시보드에 14-agent를 표시한다.
+이어 public webhook 없이도
+로컬 검증 가능한 Telegram polling mode를 구현한다.
 
 ## In Scope
 
@@ -52,6 +60,12 @@ backend-connected v1.1 완성과
 - HNI auto-company 최소 실행 MVP 구현
 - HNI auto-company backend-connected v1.1 MVP 구현
 - 실채널 연동 1차 설계 문서화
+- Telegram command channel 실연동 구현
+- Telegram webhook/status helper 및 reply path 구현
+- Telegram 연결 확인 절차 정리
+- HNI 대시보드 14-agent board 구현
+- Telegram polling intake mode 구현
+- Telegram poll-once helper 및 polling status 반영
 
 ## Out of Scope
 
@@ -60,6 +74,7 @@ backend-connected v1.1 완성과
 - 배포, 프로덕션 반영, 권한 우회 설정 적용
 - 보안/개인정보/결제 로직 변경
 - 실제 Telegram/WhatsApp production webhook 개통
+- 실제 WhatsApp live command 구현
 
 ## Deliverables
 
@@ -89,6 +104,8 @@ backend-connected v1.1 완성과
 24. `hni_auto_company_mvp/`
 25. `docs/04_specs/HNI_AUTO_COMPANY_V11_SCOPE.md`
 26. `docs/04_specs/HNI_CHANNEL_LIVE_INTEGRATION_PHASE1.md`
+27. `docs/04_specs/HNI_TELEGRAM_V12_SCOPE.md`
+28. `hni_auto_company_mvp/lib/src/telegram_integration.dart`
 
 ## Execution Sequence
 
@@ -124,6 +141,20 @@ backend-connected v1.1 완성과
     backend-connected v1.1 MVP를 구현한다.
 20. backend-connected v1.1 구조를 바탕으로
     Telegram/WhatsApp 실채널 연동 1차 설계를 문서화한다.
+21. 실채널 연동 설계를 바탕으로
+    Telegram 실연동 범위와 비프로덕션 제약을 문서화한다.
+22. backend에
+    Telegram webhook ingress, sender policy,
+    status helper, reply dispatch를 구현한다.
+23. Telegram 실연동 구현 결과를
+    테스트와 analyze 기준으로 검증하고
+    운영 문서에 반영한다.
+24. Telegram 연결 확인 기준을
+    README와 운영 응답 기준으로 정리하고,
+    Home dashboard에 14-agent board를 반영한다.
+25. public webhook 없이도
+    Telegram direct message를 backend로 intake할 수 있도록
+    polling mode와 poll-once helper를 구현한다.
 
 ## Risks
 
@@ -152,6 +183,13 @@ backend-connected v1.1 완성과
 - HNI auto-company 최소 실행 MVP가 구현됨
 - HNI auto-company backend-connected v1.1 MVP가 구현됨
 - 실채널 연동 1차 설계 문서가 준비됨
+- Telegram webhook/update/reply 경로가 비프로덕션 기준으로 구현됨
+- Telegram token/secret/webhook base URL이 env 기반으로 분리됨
+- Telegram 명령 결과가 backend audit와 Telegram reply에 함께 반영됨
+- Telegram 연결 확인 절차가 정리됨
+- Home dashboard에서 14-agent가 모두 보임
+- Telegram polling mode로
+  webhook 없이도 non-production roundtrip 검증이 가능함
 - HNI 대시보드의 Flutter 위젯 단위 IA/spec이 정의됨
 - 무엇을 도입하고 무엇을 금지할지 구분됨
 - 승인된 설계 범위의 문서 패키지가 완성됨
@@ -189,5 +227,18 @@ backend-connected v1.1 완성과
 - 사용자 추가 요청으로
   backend-connected v1.1 MVP와
   실채널 연동 1차 설계도 범위에 포함한다.
+- 사용자 추가 요청으로
+  Telegram 실연동 v1.2 구현도 범위에 포함한다.
+- 사용자 추가 요청으로
+  Telegram 연결 확인 안내와
+  대시보드 14-agent 가시화도 범위에 포함한다.
+- 2026-04-09 사용자 제공 실 Telegram bot token으로
+  비저장 runtime 검증을 수행하되,
+  public webhook 등록은
+  여전히 별도 승인 전 범위 밖으로 둔다.
+- 사용자 추가 요청으로
+  Telegram polling mode 구현도 범위에 포함한다.
+- 사용자 추가 요청으로
+  Telegram polling live roundtrip 직접 검증도 범위에 포함한다.
 - 앱 코드 수정과 배포는 여전히 범위 밖이다.
 - `auto-company`는 참조 아키텍처로만 다룬다.

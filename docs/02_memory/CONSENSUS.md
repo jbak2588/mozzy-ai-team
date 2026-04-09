@@ -438,6 +438,250 @@
   이 remote의 `main`으로 push했기 때문이다.
 * **Status:** ACTIVE
 
+### D-039
+
+* **Topic:** Telegram 실연동 v1.2 구현 범위
+* **Decision:** Telegram 실연동은
+  `hni_auto_company_mvp`의 backend에
+  비프로덕션 기준으로 구현한다.
+  범위는
+  webhook ingress route,
+  sender identity 정규화,
+  secret header 검증,
+  Telegram API status helper,
+  inbound command -> backend action 변환,
+  outbound reply / completion summary dispatch다.
+  token, webhook secret, webhook base URL은
+  모두 env 또는 dart-define으로만 주입하고
+  저장소에는 넣지 않는다.
+  실제 production webhook 개통과
+  WhatsApp live command는
+  이번 범위 밖으로 유지한다.
+* **Reason:** 사용자가 요청한 것은
+  설계가 아니라 실제 Telegram command channel 구현이지만,
+  production 개통은 별도 승인 사안이므로
+  backend-ready integration까지만 안전하게 구현해야 하기 때문이다.
+* **Status:** ACTIVE
+
+### D-040
+
+* **Topic:** Telegram sender policy 해석
+* **Decision:** Telegram sender policy는
+  일반 command와 privileged command를 분리한다.
+  `status`, `help`, `new_order`는
+  sender allowlist 기준으로 보고,
+  `approve`, `hold`, `resume`는
+  approver allowlist 기준으로 본다.
+  approver allowlist가 비어 있으면
+  sender allowlist를 재사용한다.
+  allowlist가 모두 비어 있으면
+  비프로덕션 기본값으로 모두 허용한다.
+* **Reason:** 승인/보류/재개는
+  일반 조회나 오더 생성보다 높은 권한이 필요하지만,
+  현재 단계는 production IAM이 아니라
+  backend policy gate로 통제하는 비프로덕션 구현이기 때문이다.
+* **Status:** ACTIVE
+
+### D-041
+
+* **Topic:** Flutter 앱 루트 UI action context
+* **Decision:** `HniAutoCompanyApp` 같은
+  루트 `State`에서
+  `MaterialApp` 바깥의 `context`로
+  `ScaffoldMessenger.of(context)`나
+  `showDialog(context: context)`를 직접 호출하지 않는다.
+  루트 action은
+  `scaffoldMessengerKey`와 `navigatorKey`를 통해
+  app-shell 내부 문맥으로 연결한다.
+* **Reason:** 루트 state의 `context`는
+  `MaterialApp` 아래의 `ScaffoldMessenger`와 `Navigator`
+  ancestor를 보장하지 않으므로,
+  runtime에서
+  `No ScaffoldMessenger widget found` 같은 예외가 발생할 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-042
+
+* **Topic:** Telegram 연결 확인 기준
+* **Decision:** Telegram 연결 확인은
+  세 단계로 본다.
+  1. backend status endpoint에서
+  bot/webhook 상태가 조회된다.
+  2. 필요 시 set-webhook helper로
+  webhook URL을 등록한다.
+  3. Telegram에서 `/help` 또는 `/status`를 보내면
+  bot reply와 dashboard command log가 함께 생긴다.
+  production webhook 개통 전에는
+  local backend 단독으로는
+  cloud Telegram inbound를 받을 수 없으므로,
+  외부 HTTPS URL 또는 tunnel이 필요하다는 점을
+  명시한다.
+* **Reason:** 단순히 token이 설정된 것만으로는
+  실연동이 확인되지 않고,
+  status 조회 + command roundtrip까지 봐야
+  실제 연결 여부를 판정할 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-043
+
+* **Topic:** HNI dashboard 14-agent 가시화
+* **Decision:** Home dashboard에는
+  14-agent 전체를 한눈에 볼 수 있는
+  `14-Agent Board`를 둔다.
+  각 agent는
+  역할군, lead title, 원형 persona, Mozzy/HNI 초점을
+  함께 표시한다.
+* **Reason:** 사용자가 HNI CEO 시점에서
+  현재 orchestration 구조의 전체 페르소나를
+  대시보드 안에서 직접 확인하길 원하기 때문이다.
+* **Status:** ACTIVE
+
+### D-044
+
+* **Topic:** Telegram 개인 계정 연결 해석
+* **Decision:** HNI auto-company의 Telegram 연동은
+  개인 Telegram 계정 자체를 API client로 연결하는 방식이 아니라,
+  별도 Telegram bot을 만든 뒤
+  사용자의 개인 계정이 그 bot과 대화하는 방식으로 본다.
+  현재 구현의 allowlist 키는
+  전화번호가 아니라
+  `sender_id`, `username`, `chat_id`다.
+  따라서 사용자의 전화번호만으로는
+  직접 연동 확인이 불가능하다.
+* **Reason:** Telegram Bot API는
+  bot token을 기준으로 인증되며,
+  현재 HNI backend 구현도
+  phone number가 아니라
+  sender/chat 식별자로 권한을 판단하기 때문이다.
+* **Status:** ACTIVE
+
+### D-045
+
+* **Topic:** 실 Telegram bot token 검증 방식
+* **Decision:** 사용자가 제공한 실 Telegram bot token은
+  저장소 파일에 기록하지 않고,
+  shell runtime에서만 주입해
+  `getMe`, `getWebhookInfo`, backend status 검증에 사용한다.
+  public webhook 등록이나
+  외부 inbound 개통은
+  별도 승인 전까지 진행하지 않는다.
+* **Reason:** 실 secret을
+  repo/문서에 남기지 않으면서도
+  bot 유효성과 HNI backend 연동 상태를
+  안전하게 검증해야 하기 때문이다.
+* **Status:** ACTIVE
+
+### D-046
+
+* **Topic:** Telegram 개인 계정 sender binding 전제조건
+* **Decision:** HNI app에서
+  개인 Telegram 계정 연결이 완료됐다고 보려면,
+  사용자가 먼저 `@hni_mozzy_bot`에
+  `/start`, `/help` 같은 메시지를 보내고,
+  그로부터 얻은 `username` 또는 `sender_id`
+  (`chat_id`는 선택)를 allowlist에 반영해야 한다.
+  username이 없으면
+  첫 메시지 이후 `getUpdates` 또는 향후 ingress log로
+  numeric sender id를 확인한다.
+* **Reason:** bot token 검증만으로는
+  개인 사용자의 권한 식별자가 생기지 않고,
+  실제 sender authorization은
+  message-derived identity가 있어야 걸 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-047
+
+* **Topic:** Telegram 개인 계정 연결 완료 판정의 중간 상태
+* **Decision:** 사용자가 bot chat에
+  직접 `/start`, 일반 텍스트를 보냈고
+  그 메시지가 Telegram `getUpdates`에 보이면,
+  이는 bot과 개인 계정 사이의
+  sender binding evidence로 본다.
+  다만 HNI backend가 webhook ingress만 쓰는 현재 구조에서는
+  public HTTPS webhook 또는 polling path가 없으면
+  그 단계만으로 app command roundtrip이 완료된 것은 아니다.
+* **Reason:** Telegram Bot API queue에
+  사용자 메시지가 존재한다는 사실과,
+  HNI backend가 그 메시지를 실제 intake했다는 사실은
+  서로 다른 단계이기 때문이다.
+* **Status:** ACTIVE
+
+### D-048
+
+* **Topic:** Bot username와 sender username 구분
+* **Decision:** `@hni_mozzy_bot`는
+  HNI가 지시를 보내는 대상 bot handle로 사용한다.
+  그러나 이 값은
+  개인 사용자의 sender allowlist username이 아니다.
+  사용자 계정에 Telegram username이 없으면
+  sender authorization은
+  `sender_id`와 `chat_id` 기준으로 고정한다.
+* **Reason:** bot의 공개 handle과
+  실제 명령 발신자의 식별자는 서로 다른 값이며,
+  현재 실측 데이터에서도 사용자 쪽 `sender_username`은 비어 있었기 때문이다.
+* **Status:** ACTIVE
+
+### D-049
+
+* **Topic:** Telegram non-production intake mode
+* **Decision:** public webhook이 없는 로컬 검증 단계에서는
+  Telegram intake를 webhook만으로 강제하지 않고,
+  backend polling mode를 병행 지원한다.
+  polling mode는
+  `getUpdates`를 사용해 direct message를 수신하고,
+  기존 webhook과 동일한 authorization/command/reply 경로로 넘긴다.
+* **Reason:** 현재 사용자는
+  bot과 개인 계정의 direct message까지는 확보했지만,
+  외부 HTTPS endpoint가 없어
+  webhook ingress로는 roundtrip을 완성할 수 없기 때문이다.
+* **Status:** ACTIVE
+
+### D-050
+
+* **Topic:** 실 Telegram runtime env 보관 위치
+* **Decision:** 실 bot token과
+  sender/chat allowlist 값은
+  git에 추적되지 않는
+  `.hni_auto_company/telegram.local.env`에만 둔다.
+  repo 문서에는
+  값 자체를 쓰지 않고
+  구조와 절차만 기록한다.
+* **Reason:** 사용자가 요청한 실제 연결값을
+  로컬 실행에는 적용하되,
+  secret과 개인 식별자를
+  저장소 이력에 남기지 않기 위해서다.
+* **Status:** ACTIVE
+
+### D-051
+
+* **Topic:** Telegram polling live verification 기준
+* **Decision:** Telegram polling live roundtrip이 성공했다고 보려면
+  세 조건을 함께 만족해야 한다.
+  1. pending update가 `poll-once` 또는 polling loop로 실제 처리된다.
+  2. backend command log에
+  sender id/chat id와 함께 결과가 남는다.
+  3. 같은 private chat으로
+  bot outbound `sendMessage`가 `ok:true`로 확인된다.
+* **Reason:** polling intake만으로는
+  outbound delivery가 검증되지 않고,
+  outbound만으로는 backend intake가 검증되지 않기 때문이다.
+* **Status:** ACTIVE
+
+### D-052
+
+* **Topic:** 현재 GitHub publish scope
+* **Decision:** 이번 GitHub publish는
+  Telegram v1.2 구현, polling mode, dashboard/README/spec/test 변경과
+  그에 따른 Flutter macOS workspace 동기화 파일까지 포함한다.
+  반면 실 bot token과 개인 식별자가 들어 있는
+  `.hni_auto_company/telegram.local.env`는
+  계속 로컬 전용으로 남겨 GitHub publish에서 제외한다.
+* **Reason:** 사용자가 요청한 기능 변경 전체는
+  remote에 반영해야 하지만,
+  실 secret/runtime 값은
+  local-only 원칙을 계속 지켜야 하기 때문이다.
+* **Status:** ACTIVE
+
 ---
 
 ## Open Questions

@@ -59,17 +59,19 @@ Flutter 위젯 단위로 세분화한
 #### Executive Home Widget Tree
 
 - `ExecutiveHomeScreen`
-  - `ExecutiveSummaryHeader`
-  - `RiskAlertStrip`
-  - `KpiCardGrid`
-  - `ActiveOrdersPanel`
-  - `PendingApprovalsPanel`
-  - `RecentReportsPanel`
-  - `SquadLoadPanel`
+- `ExecutiveSummaryHeader`
+- `RiskAlertStrip`
+- `KpiCardGrid`
+- `AgentBoardPanel`
+- `ActiveOrdersPanel`
+- `PendingApprovalsPanel`
+- `RecentReportsPanel`
+- `SquadLoadPanel`
 
 #### Executive Home State Sources
 
 - `dashboardSummaryProvider`
+- `agentDirectoryProvider`
 - `activeOrdersProvider`
 - `pendingApprovalsProvider`
 - `recentReportsProvider`
@@ -77,6 +79,7 @@ Flutter 위젯 단위로 세분화한
 #### Executive Home Key Actions
 
 - 새 work order 생성
+- 14-agent 역할군 확인
 - high-risk order로 이동
 - 최근 보고서 상세 보기
 

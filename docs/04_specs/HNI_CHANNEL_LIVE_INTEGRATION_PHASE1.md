@@ -7,9 +7,12 @@ HNI auto-company v1.1 backend 위에
 실제 Telegram / WhatsApp 채널을 붙이는
 1차 설계 기준을 정리한다.
 
-이번 문서는 **설계만 포함**한다.
-실제 production webhook 개통과 메시지 발송은
-범위 밖이다.
+이 문서는 원래 **설계 기준**으로 시작했다.
+이후 `v1.2`에서
+Telegram ingress/reply/status helper가
+backend에 실제 구현됐다.
+다만 실제 production webhook 개통과
+운영 전환은 여전히 범위 밖이다.
 
 ## Phase 1 Objective
 

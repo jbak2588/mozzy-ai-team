@@ -6,10 +6,7 @@ import 'models.dart';
 import 'store.dart';
 
 class HniAutoCompanyApp extends StatefulWidget {
-  const HniAutoCompanyApp({
-    super.key,
-    required this.store,
-  });
+  const HniAutoCompanyApp({super.key, required this.store});
 
   final AutoCompanyStore store;
 
@@ -19,9 +16,113 @@ class HniAutoCompanyApp extends StatefulWidget {
 
 enum AppSection { home, orders, reports, approvals, channels, audit }
 
+class _AgentPersona {
+  const _AgentPersona({
+    required this.group,
+    required this.title,
+    required this.persona,
+    required this.focus,
+  });
+
+  final String group;
+  final String title;
+  final String persona;
+  final String focus;
+}
+
+const _agentPersonas = [
+  _AgentPersona(
+    group: 'Strategy',
+    title: 'Strategy Lead',
+    persona: 'ceo-bezos',
+    focus: '사업 방향, 우선순위, 제품 가치',
+  ),
+  _AgentPersona(
+    group: 'Strategy',
+    title: 'Platform Architecture Lead',
+    persona: 'cto-vogels',
+    focus: '시스템 구조, 확장성, 기술 선택',
+  ),
+  _AgentPersona(
+    group: 'Strategy',
+    title: 'Risk Auditor',
+    persona: 'critic-munger',
+    focus: '역검토, pre-mortem, 범위 초과 차단',
+  ),
+  _AgentPersona(
+    group: 'Product',
+    title: 'Product Experience Lead',
+    persona: 'product-norman',
+    focus: '사용자 문제 정의, UX 원칙, 정보 구조',
+  ),
+  _AgentPersona(
+    group: 'Product',
+    title: 'Visual Design Lead',
+    persona: 'ui-duarte',
+    focus: '시각 시스템, 컴포넌트 방향',
+  ),
+  _AgentPersona(
+    group: 'Product',
+    title: 'Interaction Flow Lead',
+    persona: 'interaction-cooper',
+    focus: '사용자 플로우, 네비게이션, persona 흐름',
+  ),
+  _AgentPersona(
+    group: 'Engineering',
+    title: 'App Delivery Lead',
+    persona: 'fullstack-dhh',
+    focus: '구현 전략, 코드 구조, 생산성',
+  ),
+  _AgentPersona(
+    group: 'Engineering',
+    title: 'Quality Lead',
+    persona: 'qa-bach',
+    focus: '테스트 전략, 회귀 위험, 검증 기준',
+  ),
+  _AgentPersona(
+    group: 'Engineering',
+    title: 'Release & Infra Lead',
+    persona: 'devops-hightower',
+    focus: 'CI/CD, 운영 런북, 모니터링',
+  ),
+  _AgentPersona(
+    group: 'Business',
+    title: 'Brand & GTM Lead',
+    persona: 'marketing-godin',
+    focus: '포지셔닝, 메시지, 런치 스토리',
+  ),
+  _AgentPersona(
+    group: 'Business',
+    title: 'Community Operations Lead',
+    persona: 'operations-pg',
+    focus: '초기 커뮤니티 운영, 리텐션, 현장 실험',
+  ),
+  _AgentPersona(
+    group: 'Business',
+    title: 'Partnership & Monetization Lead',
+    persona: 'sales-ross',
+    focus: '판매/제휴 구조, 수익화 패키징',
+  ),
+  _AgentPersona(
+    group: 'Business',
+    title: 'Finance & Unit Economics Lead',
+    persona: 'cfo-campbell',
+    focus: '가격, 단위경제, 비용 구조',
+  ),
+  _AgentPersona(
+    group: 'Intelligence',
+    title: 'Market Intelligence Lead',
+    persona: 'research-thompson',
+    focus: '시장 조사, 경쟁 구조, 사용자 니즈',
+  ),
+];
+
 class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
   AppSection _section = AppSection.home;
   CommandChannel _channel = CommandChannel.telegram;
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final TextEditingController _commandController = TextEditingController(
     text: '/new_order Neighborhood MVP | approval 이후 연속 실행 검증 | HNI | main',
   );
@@ -37,6 +138,8 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
     return MaterialApp(
       title: 'HNI Auto-Company MVP',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: _scaffoldMessengerKey,
+      navigatorKey: _navigatorKey,
       theme: _buildTheme(),
       home: AnimatedBuilder(
         animation: widget.store,
@@ -48,10 +151,7 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFF7F2E8),
-                    Color(0xFFEAF4F1),
-                  ],
+                  colors: [Color(0xFFF7F2E8), Color(0xFFEAF4F1)],
                 ),
               ),
               child: Row(
@@ -71,9 +171,7 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(12, 0, 16, 16),
-                            child: _SectionSurface(
-                              child: _buildSection(store),
-                            ),
+                            child: _SectionSurface(child: _buildSection(store)),
                           ),
                         ),
                       ],
@@ -103,9 +201,7 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(
-            color: Colors.black.withValues(alpha: 0.05),
-          ),
+          side: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -279,6 +375,11 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
               );
             },
           ),
+          const SizedBox(height: 12),
+          _InfoCard(
+            title: '14-Agent Board',
+            child: _AgentBoard(personas: _agentPersonas),
+          ),
         ],
       ),
     );
@@ -336,17 +437,13 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                     onApprovePlan: () {
                       final approval = order.pendingApproval(ApprovalType.plan);
                       if (approval != null) {
-                        unawaited(
-                          store.approveApproval(order.id, approval.id),
-                        );
+                        unawaited(store.approveApproval(order.id, approval.id));
                       }
                     },
                     onApproveRisk: () {
                       final approval = order.pendingApproval(ApprovalType.risk);
                       if (approval != null) {
-                        unawaited(
-                          store.approveApproval(order.id, approval.id),
-                        );
+                        unawaited(store.approveApproval(order.id, approval.id));
                       }
                     },
                     onHold: () => unawaited(store.holdOrder(order.id)),
@@ -451,7 +548,10 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                     ),
                     OutlinedButton(
                       onPressed: () => unawaited(
-                        store.holdOrder(item.order.id, note: item.approval.note),
+                        store.holdOrder(
+                          item.order.id,
+                          note: item.approval.note,
+                        ),
                       ),
                       child: const Text('Hold'),
                     ),
@@ -484,80 +584,99 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(18),
-              child: Column(
-                children: [
-                  Row(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isCompact = constraints.maxWidth < 860;
+                  final channelPicker = SizedBox(
+                    width: isCompact ? double.infinity : 180,
+                    child: DropdownButtonFormField<CommandChannel>(
+                      initialValue: _channel,
+                      isExpanded: true,
+                      items: CommandChannel.values
+                          .map(
+                            (item) => DropdownMenuItem(
+                              value: item,
+                              child: Text(item.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _channel = value);
+                        }
+                      },
+                    ),
+                  );
+                  final commandField = TextField(
+                    controller: _commandController,
+                    decoration: const InputDecoration(
+                      hintText:
+                          '/new_order title | objective | product | branch',
+                    ),
+                  );
+                  final runButton = FilledButton.icon(
+                    onPressed: () async {
+                      final input = _commandController.text.trim();
+                      if (input.isEmpty) {
+                        return;
+                      }
+                      await store.submitCommand(_channel, input);
+                      if (mounted) {
+                        _scaffoldMessengerKey.currentState?.showSnackBar(
+                          const SnackBar(content: Text('Command dispatched')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.send),
+                    label: const Text('Run'),
+                  );
+
+                  return Column(
                     children: [
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<CommandChannel>(
-                          initialValue: _channel,
-                          items: CommandChannel.values
-                              .map(
-                                (item) => DropdownMenuItem(
-                                  value: item,
-                                  child: Text(item.label),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _channel = value);
-                            }
-                          },
+                      if (isCompact) ...[
+                        channelPicker,
+                        const SizedBox(height: 12),
+                        commandField,
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: runButton,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _commandController,
-                          decoration: const InputDecoration(
-                            hintText: '/new_order title | objective | product | branch',
+                      ] else
+                        Row(
+                          children: [
+                            channelPicker,
+                            const SizedBox(width: 12),
+                            Expanded(child: commandField),
+                            const SizedBox(width: 12),
+                            runButton,
+                          ],
+                        ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _SuggestionChip(
+                            label: '/new_order Neighborhood read | 승인 후 연속 실행',
+                            onTap: () => _commandController.text =
+                                '/new_order Neighborhood read | 승인 후 연속 실행 | Mozzy | hyperlocal-proposal',
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      FilledButton.icon(
-                        onPressed: () async {
-                          final input = _commandController.text.trim();
-                          if (input.isEmpty) {
-                            return;
-                          }
-                          await store.submitCommand(_channel, input);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Command dispatched'),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.send),
-                        label: const Text('Run'),
+                          _SuggestionChip(
+                            label: '/approve WO-101',
+                            onTap: () =>
+                                _commandController.text = '/approve WO-101',
+                          ),
+                          _SuggestionChip(
+                            label: '/status WO-101',
+                            onTap: () =>
+                                _commandController.text = '/status WO-101',
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _SuggestionChip(
-                        label: '/new_order Neighborhood read | 승인 후 연속 실행',
-                        onTap: () => _commandController.text =
-                            '/new_order Neighborhood read | 승인 후 연속 실행 | Mozzy | hyperlocal-proposal',
-                      ),
-                      _SuggestionChip(
-                        label: '/approve WO-101',
-                        onTap: () => _commandController.text = '/approve WO-101',
-                      ),
-                      _SuggestionChip(
-                        label: '/status WO-101',
-                        onTap: () => _commandController.text = '/status WO-101',
-                      ),
-                    ],
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),
@@ -586,15 +705,28 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                             Expanded(
                               child: Text(
                                 log.input,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontFamily: 'monospace'),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
+                        if ((log.senderLabel ?? '').isNotEmpty ||
+                            (log.chatId ?? '').isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              [
+                                if ((log.senderLabel ?? '').isNotEmpty)
+                                  log.senderLabel!,
+                                if ((log.chatId ?? '').isNotEmpty)
+                                  'chat ${log.chatId}',
+                              ].join(' · '),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: const Color(0xFF64748B)),
+                            ),
+                          ),
                         Text(log.result),
                       ],
                     ),
@@ -623,7 +755,9 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
               child: Icon(Icons.timeline, color: Color(0xFF115E59)),
             ),
             title: Text(entry.message),
-            subtitle: Text('${entry.orderId} · ${_formatDateTime(entry.createdAt)}'),
+            subtitle: Text(
+              '${entry.orderId} · ${_formatDateTime(entry.createdAt)}',
+            ),
           ),
         );
       },
@@ -631,6 +765,10 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
   }
 
   Future<void> _openCreateOrderDialog() async {
+    final dialogContext = _navigatorKey.currentContext;
+    if (dialogContext == null) {
+      return;
+    }
     final titleController = TextEditingController();
     final objectiveController = TextEditingController();
     final requesterController = TextEditingController(text: 'HNI CEO');
@@ -640,7 +778,7 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
     final risk = RiskProfile();
 
     await showDialog<void>(
-      context: context,
+      context: dialogContext,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
@@ -660,7 +798,9 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                       TextField(
                         controller: objectiveController,
                         maxLines: 3,
-                        decoration: const InputDecoration(labelText: 'Objective'),
+                        decoration: const InputDecoration(
+                          labelText: 'Objective',
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -699,6 +839,7 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               initialValue: squad,
+                              isExpanded: true,
                               items: const [
                                 DropdownMenuItem(
                                   value: 'Discovery',
@@ -737,14 +878,18 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                       CheckboxListTile(
                         value: risk.scopeExpansion,
                         onChanged: (value) {
-                          setDialogState(() => risk.scopeExpansion = value ?? false);
+                          setDialogState(
+                            () => risk.scopeExpansion = value ?? false,
+                          );
                         },
                         title: const Text('Scope expansion'),
                       ),
                       CheckboxListTile(
                         value: risk.production,
                         onChanged: (value) {
-                          setDialogState(() => risk.production = value ?? false);
+                          setDialogState(
+                            () => risk.production = value ?? false,
+                          );
                         },
                         title: const Text('Production action'),
                       ),
@@ -772,7 +917,9 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
                       CheckboxListTile(
                         value: risk.destructive,
                         onChanged: (value) {
-                          setDialogState(() => risk.destructive = value ?? false);
+                          setDialogState(
+                            () => risk.destructive = value ?? false,
+                          );
                         },
                         title: const Text('Destructive change'),
                       ),
@@ -822,10 +969,7 @@ class _HniAutoCompanyAppState extends State<HniAutoCompanyApp> {
 }
 
 class _NavigationSidebar extends StatelessWidget {
-  const _NavigationSidebar({
-    required this.selected,
-    required this.onSelect,
-  });
+  const _NavigationSidebar({required this.selected, required this.onSelect});
 
   final AppSection selected;
   final ValueChanged<AppSection> onSelect;
@@ -840,11 +984,7 @@ class _NavigationSidebar extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF1E293B),
-            Color(0xFF115E59),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF115E59)],
         ),
       ),
       child: NavigationRail(
@@ -857,12 +997,8 @@ class _NavigationSidebar extends StatelessWidget {
           color: Colors.white,
           fontWeight: FontWeight.w700,
         ),
-        unselectedIconTheme: const IconThemeData(
-          color: Color(0xFFD1D5DB),
-        ),
-        unselectedLabelTextStyle: const TextStyle(
-          color: Color(0xFFD1D5DB),
-        ),
+        unselectedIconTheme: const IconThemeData(color: Color(0xFFD1D5DB)),
+        unselectedLabelTextStyle: const TextStyle(color: Color(0xFFD1D5DB)),
         onDestinationSelected: (index) => onSelect(AppSection.values[index]),
         destinations: const [
           NavigationRailDestination(
@@ -908,52 +1044,68 @@ class _TopHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = Text(switch (section) {
+      AppSection.home => 'Executive Home',
+      AppSection.orders => 'Work Orders',
+      AppSection.reports => 'Reports',
+      AppSection.approvals => 'Approval Gates',
+      AppSection.channels => 'Channel Center',
+      AppSection.audit => 'Audit Timeline',
+    }, style: Theme.of(context).textTheme.titleLarge);
+    final actions = Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _StatusPill(
+          label: store.modeLabel,
+          color: store.isRemoteMode
+              ? const Color(0xFF1D4ED8)
+              : const Color(0xFF475569),
+        ),
+        _StatusPill(
+          label: store.backendStatusLabel,
+          color: store.isRemoteMode
+              ? const Color(0xFF0891B2)
+              : const Color(0xFF64748B),
+        ),
+        _StatusPill(
+          label: 'Auto Runs ${store.activeRunCount}',
+          color: const Color(0xFF7C3AED),
+        ),
+        _StatusPill(
+          label: 'Pending ${store.pendingApprovalCount}',
+          color: const Color(0xFFB45309),
+        ),
+        FilledButton.icon(
+          onPressed: onNewOrder,
+          icon: const Icon(Icons.add),
+          label: const Text('New Work Order'),
+        ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 16, 16, 12),
-      child: Row(
-        children: [
-          Text(
-            switch (section) {
-              AppSection.home => 'Executive Home',
-              AppSection.orders => 'Work Orders',
-              AppSection.reports => 'Reports',
-              AppSection.approvals => 'Approval Gates',
-              AppSection.channels => 'Channel Center',
-              AppSection.audit => 'Audit Timeline',
-            },
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const Spacer(),
-          _StatusPill(
-            label: store.modeLabel,
-            color: store.isRemoteMode
-                ? const Color(0xFF1D4ED8)
-                : const Color(0xFF475569),
-          ),
-          const SizedBox(width: 8),
-          _StatusPill(
-            label: store.backendStatusLabel,
-            color: store.isRemoteMode
-                ? const Color(0xFF0891B2)
-                : const Color(0xFF64748B),
-          ),
-          const SizedBox(width: 8),
-          _StatusPill(
-            label: 'Auto Runs ${store.activeRunCount}',
-            color: const Color(0xFF7C3AED),
-          ),
-          const SizedBox(width: 8),
-          _StatusPill(
-            label: 'Pending ${store.pendingApprovalCount}',
-            color: const Color(0xFFB45309),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: onNewOrder,
-            icon: const Icon(Icons.add),
-            label: const Text('New Work Order'),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 900;
+          if (isCompact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [title, const SizedBox(height: 12), actions],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: title),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Align(alignment: Alignment.centerRight, child: actions),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -972,10 +1124,7 @@ class _SectionSurface extends StatelessWidget {
         borderRadius: BorderRadius.circular(34),
         border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(34),
-        child: child,
-      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(34), child: child),
     );
   }
 }
@@ -1010,10 +1159,9 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: accent,
-                  fontSize: 34,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.displaySmall?.copyWith(color: accent, fontSize: 34),
           ),
           const SizedBox(height: 8),
           Text(caption),
@@ -1024,10 +1172,7 @@ class _MetricCard extends StatelessWidget {
 }
 
 class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.title,
-    required this.child,
-  });
+  const _InfoCard({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -1040,13 +1185,71 @@ class _InfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             child,
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AgentBoard extends StatelessWidget {
+  const _AgentBoard({required this.personas});
+
+  final List<_AgentPersona> personas;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: personas
+          .map((persona) => _AgentPersonaCard(persona: persona))
+          .toList(),
+    );
+  }
+}
+
+class _AgentPersonaCard extends StatelessWidget {
+  const _AgentPersonaCard({required this.persona});
+
+  final _AgentPersona persona;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _colorForAgentGroup(persona.group);
+    return SizedBox(
+      width: 260,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.82),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: accent.withValues(alpha: 0.2)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _StatusPill(label: persona.group, color: accent),
+              const SizedBox(height: 10),
+              Text(
+                persona.title,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                persona.persona,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+              ),
+              const SizedBox(height: 8),
+              Text(persona.focus, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
         ),
       ),
     );
@@ -1106,19 +1309,16 @@ class _OrderDetailPane extends StatelessWidget {
         children: [
           Text(
             order.title,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontSize: 34,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.displaySmall?.copyWith(fontSize: 34),
           ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _StatusPill(
-                label: order.id,
-                color: const Color(0xFF0F766E),
-              ),
+              _StatusPill(label: order.id, color: const Color(0xFF0F766E)),
               _StatusPill(
                 label: order.status.label,
                 color: _colorForOrderStatus(order.status),
@@ -1129,10 +1329,8 @@ class _OrderDetailPane extends StatelessWidget {
               ),
               if (order.riskProfile.labels.isNotEmpty)
                 ...order.riskProfile.labels.map(
-                  (item) => _StatusPill(
-                    label: item,
-                    color: const Color(0xFFB45309),
-                  ),
+                  (item) =>
+                      _StatusPill(label: item, color: const Color(0xFFB45309)),
                 ),
             ],
           ),
@@ -1175,14 +1373,8 @@ class _OrderDetailPane extends StatelessWidget {
                   onPressed: onApproveRisk,
                   child: const Text('Approve Risk Gate'),
                 ),
-              OutlinedButton(
-                onPressed: onHold,
-                child: const Text('Hold'),
-              ),
-              OutlinedButton(
-                onPressed: onResume,
-                child: const Text('Resume'),
-              ),
+              OutlinedButton(onPressed: onHold, child: const Text('Hold')),
+              OutlinedButton(onPressed: onResume, child: const Text('Resume')),
             ],
           ),
           const SizedBox(height: 12),
@@ -1241,7 +1433,9 @@ class _OrderDetailPane extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
-                  ...order.reports.reversed.map((report) => _ReportTile(report: report)),
+                  ...order.reports.reversed.map(
+                    (report) => _ReportTile(report: report),
+                  ),
                 ],
               ),
             ),
@@ -1298,10 +1492,7 @@ class _ReportTile extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.label,
-    required this.color,
-  });
+  const _StatusPill({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -1316,20 +1507,14 @@ class _StatusPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }
 }
 
 class _StagePill extends StatelessWidget {
-  const _StagePill({
-    required this.label,
-    required this.tone,
-  });
+  const _StagePill({required this.label, required this.tone});
 
   final String label;
   final Color tone;
@@ -1344,51 +1529,51 @@ class _StagePill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontWeight: FontWeight.w700,
-          color: tone,
-        ),
+        style: TextStyle(fontWeight: FontWeight.w700, color: tone),
       ),
     );
   }
 }
 
 class _SuggestionChip extends StatelessWidget {
-  const _SuggestionChip({
-    required this.label,
-    required this.onTap,
-  });
+  const _SuggestionChip({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(
-      onPressed: onTap,
-      label: Text(label),
-    );
+    return ActionChip(onPressed: onTap, label: Text(label));
   }
 }
 
 Color _colorForOrderStatus(OrderStatus status) => switch (status) {
-      OrderStatus.approvalPending => const Color(0xFFB45309),
-      OrderStatus.planned => const Color(0xFF0F766E),
-      OrderStatus.inProgress => const Color(0xFF2563EB),
-      OrderStatus.evaluation => const Color(0xFF7C3AED),
-      OrderStatus.revise => const Color(0xFFDC2626),
-      OrderStatus.completed => const Color(0xFF15803D),
-      OrderStatus.hold => const Color(0xFF6B7280),
-    };
+  OrderStatus.approvalPending => const Color(0xFFB45309),
+  OrderStatus.planned => const Color(0xFF0F766E),
+  OrderStatus.inProgress => const Color(0xFF2563EB),
+  OrderStatus.evaluation => const Color(0xFF7C3AED),
+  OrderStatus.revise => const Color(0xFFDC2626),
+  OrderStatus.completed => const Color(0xFF15803D),
+  OrderStatus.hold => const Color(0xFF6B7280),
+};
 
 Color _toneForStage(ExecutionStage stage) => switch (stage) {
-      ExecutionStage.strategicReview => const Color(0xFF7C3AED),
-      ExecutionStage.planning => const Color(0xFF0F766E),
-      ExecutionStage.execution => const Color(0xFF2563EB),
-      ExecutionStage.evaluation => const Color(0xFFB45309),
-      ExecutionStage.revision => const Color(0xFFDC2626),
-      ExecutionStage.completion => const Color(0xFF15803D),
-    };
+  ExecutionStage.strategicReview => const Color(0xFF7C3AED),
+  ExecutionStage.planning => const Color(0xFF0F766E),
+  ExecutionStage.execution => const Color(0xFF2563EB),
+  ExecutionStage.evaluation => const Color(0xFFB45309),
+  ExecutionStage.revision => const Color(0xFFDC2626),
+  ExecutionStage.completion => const Color(0xFF15803D),
+};
+
+Color _colorForAgentGroup(String group) => switch (group) {
+  'Strategy' => const Color(0xFF7C3AED),
+  'Product' => const Color(0xFF0F766E),
+  'Engineering' => const Color(0xFF2563EB),
+  'Business' => const Color(0xFFB45309),
+  'Intelligence' => const Color(0xFFDC2626),
+  _ => const Color(0xFF475569),
+};
 
 String _formatDateTime(DateTime value) {
   final local = value.toLocal();

@@ -54,6 +54,25 @@
 | P-050 | 실채널 1차 설계 문서화 | DONE | P-049 | live channel design |
 | P-051 | v1.1 검증 및 문서 반영 | DONE | P-050 | verification + docs |
 | P-052 | GitHub 커밋/푸시 반영 | DONE | P-051 | local commit + remote push |
+| P-053 | Telegram 실연동 범위 정의 | DONE | P-050,P-051 | Telegram v1.2 scope |
+| P-054 | Telegram 실연동 문서 반영 | DONE | P-053 | plan + spec update |
+| P-055 | Telegram backend/reply 구현 | DONE | P-054 | webhook + dispatcher |
+| P-056 | Telegram 실연동 검증 | DONE | P-055 | analyze + test |
+| P-057 | Telegram 작업 기록 반영 | DONE | P-056 | consensus + session log |
+| P-058 | 앱 루트 context 예외 수정 | DONE | P-057 | UI context fix |
+| P-059 | Telegram 확인/agent board 범위 반영 | DONE | P-058 | plan + IA update |
+| P-060 | Home dashboard 14-agent board 구현 | DONE | P-059 | agent visibility UI |
+| P-061 | Telegram 안내/agent board 검증 및 기록 | DONE | P-060 | README + logs |
+| P-062 | Telegram runtime 상태 점검/안내 | DONE | P-061 | runtime check + guide |
+| P-063 | 실 Telegram bot token 유효성 검증 | DONE | P-062 | live bot status |
+| P-064 | Telegram 계정 바인딩 가이드 보강 | DONE | P-063 | README + logs |
+| P-065 | Telegram 사용자 메시지 live 수신 확인 | DONE | P-064 | sender binding evidence |
+| P-066 | Telegram polling 범위 반영 | DONE | P-065 | plan + spec update |
+| P-067 | Telegram polling backend 구현 | DONE | P-066 | poll loop + helper |
+| P-068 | Telegram polling 검증 및 기록 | DONE | P-067 | tests + logs |
+| P-069 | Telegram 로컬 runtime env 적용 | DONE | P-068 | ignored local env |
+| P-070 | Telegram polling live roundtrip 검증 | DONE | P-069 | roundtrip proof |
+| P-071 | Telegram/polling 변경 GitHub 반영 | DONE | P-070 | commit + push |
 
 ## Status Legend
 
@@ -105,3 +124,57 @@
   초기에는 `origin` remote 부재가 blocker였지만,
   이후 `jbak2588/mozzy-ai-team` remote 연결과
   `main` push까지 완료했다.
+- 2026-04-09 사용자 요청으로
+  Telegram 실연동 v1.2 구현까지 범위를 확장했다.
+- Telegram v1.2 구현은
+  backend webhook/status helper,
+  sender policy, reply path,
+  completion summary dispatch 기준으로 완료했다.
+- Telegram 구현 검증은
+  `flutter analyze`, `flutter test`,
+  `markdownlint-cli@0.40.0 '**/*.md'` 기준으로 완료했다.
+- 2026-04-09 테스트 구동 중 확인된
+  `No ScaffoldMessenger widget found` 예외를
+  별도 후속 수정 항목으로 반영했다.
+- `scaffoldMessengerKey`와 `navigatorKey`를
+  루트 앱에 연결해
+  snackbar/dialog 호출 경로를 안정화했다.
+- header와 channel/dialog dropdown을
+  반응형으로 조정해
+  widget test 기준 overflow도 제거했다.
+- 2026-04-09 사용자 요청으로
+  Telegram 연결 확인 절차와
+  대시보드 14-agent 가시화를 범위에 추가했다.
+- Home dashboard에
+  `14-Agent Board`를 추가해
+  14개 persona를 역할군/리드/원형 이름과 함께 표시한다.
+- Telegram 연결 확인 절차는
+  README에 status endpoint, set-webhook,
+  `/help` roundtrip, command log 기준으로 정리했다.
+- 2026-04-09 runtime 점검 기준으로
+  현재 shell env에는 Telegram bot token/webhook 값이 없고,
+  backend `127.0.0.1:8787`도 미기동 상태였다.
+- 2026-04-09 사용자 제공 실 bot token 기준으로
+  Telegram Bot API와 backend status를 재검증한 결과,
+  `@hni_mozzy_bot`는 유효했고
+  webhook은 아직 비어 있었다.
+- 같은 시점 `getUpdates` 기준으로
+  bot에 들어온 사용자 메시지가 없어
+  개인 계정 sender binding은 아직 완료되지 않았다.
+- 이후 사용자 첨부 이미지와
+  live `getUpdates`를 대조한 결과,
+  개인 계정의 direct message가
+  Telegram bot update queue까지는 실제로 도달했음을 확인했다.
+- 다만 현재 구현은 webhook ingress 기준이라
+  public HTTPS webhook 또는 polling 경로 없이는
+  그 메시지가 HNI backend로 아직 전달되지 않는다.
+- 2026-04-09 사용자 추가 요청으로
+  public webhook 없이도 Telegram roundtrip 검증이 가능하도록
+  polling mode를 범위에 포함했다.
+- 실 Telegram token과 sender/chat 식별자는
+  git 추적 밖의 `.hni_auto_company/telegram.local.env`에만 반영했다.
+- 2026-04-09 사용자 요청으로
+  Telegram polling live roundtrip을
+  임시 backend state 파일 기준으로 직접 검증했다.
+- 이어 같은 변경분을
+  local env 제외 기준으로 GitHub `origin/main`에 반영한다.
