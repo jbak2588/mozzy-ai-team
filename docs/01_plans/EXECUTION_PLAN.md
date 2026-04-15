@@ -13,7 +13,30 @@ backend-connected v1.1 완성과
 실채널 연동 1차 설계 및
 Telegram 실연동 v1.2 구현 및
 대시보드 14-agent 가시화 및
-Telegram polling mode 구현
+Telegram polling mode 구현 및
+Telegram public webhook 배포 아티팩트 준비 및
+`bling` 병렬 제어/landing-domain 적합성 검토 및
+`ai.humantric.net` 분리 아키텍처 설계 및
+future web dashboard route 구조 설계 및
+route별 auth gate / role matrix 설계 및
+repository mode selection 설계 및
+auth provider / OIDC 설계 및
+auth provider 후보 비교와 선택 기준 설계 및
+future web dashboard wireframe 구조 설계 및
+auth provider별 integration sequence 설계 및
+future web dashboard component map 설계 및
+future web dashboard implementation backlog 설계 및
+auth/session API contract 세분화 및
+Mozzy-ai-team vNext 제품 정의 / README 전면 재구성 및
+same-repo Gemini orchestrator skeleton 구현 및
+Dart backend AI broker / agent graph 구현 및
+14-agent control panel 승격 및
+Flutter web-safe bootstrap 정리 및
+future web dashboard route-driven shell 1차 구현 및
+same-origin auth/session bootstrap 1차 구현 및
+business API role enforcement 1차 구현 및
+same-origin login-first bootstrap 강화 및
+OIDC/provider adapter 1차 구현
 
 ## Objective
 
@@ -39,6 +62,90 @@ Telegram polling mode 구현
 대시보드에 14-agent를 표시한다.
 이어 public webhook 없이도
 로컬 검증 가능한 Telegram polling mode를 구현한다.
+이어 public domain webhook mode용
+nginx/systemd/env/script/deploy guide를
+placeholder 기반으로 준비한다.
+이어 `bling` sibling repo를
+현재 HNI MVP가 병렬 제어할 수 있는지와,
+`public/index.html` 기반 landing 구조에
+Telegram용 내부 도메인 연결 여지가 있는지 검토한다.
+이어 `humantric.net` landing과
+`ai.humantric.net` control/backend를 분리하는
+권장 아키텍처를 설계한다.
+이어 `ai.humantric.net` 아래의
+dashboard/auth/api/webhook namespace를
+충돌 없이 운영할 route 구조로 설계한다.
+이어 future dashboard route마다
+필요 role, auth gate, redirect 규칙을
+role matrix 형태로 설계한다.
+이어 `apiBaseUrl.isEmpty` 분기로 대표되는
+repository mode selection 구조를
+현재/future runtime 기준으로 설계한다.
+이어 future web dashboard의
+human auth provider, OIDC flow,
+session 정책을 설계한다.
+이어 candidate auth provider를
+공식 문서 기준으로 비교하고,
+HNI용 선택 기준과 provisional recommendation을 정리한다.
+이어 route/auth/session 기준을 바탕으로
+future web dashboard의
+화면별 wireframe 구조를 설계한다.
+이어 shortlisted auth provider마다
+app registration, callback, logout,
+claim mapping, session issue 순서의
+integration sequence를 정리한다.
+이어 route와 wireframe을 바탕으로
+future web dashboard를
+구현 단위 component map으로 세분화한다.
+이어 route, auth, component map을 바탕으로
+future web dashboard의
+구현 우선순위 backlog를 정리한다.
+이어 same-origin control plane 기준의
+auth/session API contract를
+browser route, session endpoint, cookie, error 형식까지 세분화한다.
+이어 `Mozzy-ai-team`을
+HNI용 14-persona AI agent 협업 control plane으로 재정의하고,
+루트 `README.md`를 제품/아키텍처/로드맵/문서 허브로 전면 재구성한다.
+이어 `geminiclaw`의 server-side env 패턴을 참조해
+same-repo Python Gemini orchestrator skeleton을 추가한다.
+이어 Dart backend가
+`HNI_AI_ORCHESTRATOR_BASE_URL`을 통해
+Python AI service와 통신하도록 broker와 stage-run 연동을 구현한다.
+이어 `agent graph`와
+interactive 14-agent control panel을
+현재 Flutter 앱에 반영한다.
+이어 Flutter app이
+desktop뿐 아니라 web target에서도
+same-origin/`API_BASE_URL` 기준으로 기동 가능하도록
+web-safe repository bootstrap을 정리한다.
+이어 Flutter web에서
+`/dashboard/*`와 `/auth/*`를 직접 열 수 있는
+route-driven shell 1차 구현을 추가한다.
+이어 same-origin backend 기준의
+`/api/v1/session`,
+`/api/v1/session/bootstrap`,
+`/api/v1/session/logout`
+bootstrap과 web route gate를
+provider 없는 1차 auth slice로 구현한다.
+이어 same-origin session과 role matrix를 기준으로
+selected business API에
+Operator/Lead/Approver/Admin 최소 권한과
+CSRF 검증을 단계적으로 연결한다.
+같은 기준으로
+dashboard action button도 role별로 비활성화한다.
+이어 same-origin bootstrap 기본값을
+anonymous + explicit login-first로 재정렬하고,
+비로그인 remote web shell에서도
+앱이 안전하게 기동되도록
+empty remote shell / reconnect 흐름을 추가한다.
+이어 backend에
+`/auth/login`, `/auth/callback`, `/auth/logout`
+browser auth route와
+provider adapter abstraction을 추가한다.
+현재 adapter 범위는
+`bootstrap`과 `mock_oidc`까지로 제한하고,
+실제 external provider token exchange는
+후속 단계로 둔다.
 
 ## In Scope
 
@@ -66,6 +173,37 @@ Telegram polling mode 구현
 - HNI 대시보드 14-agent board 구현
 - Telegram polling intake mode 구현
 - Telegram poll-once helper 및 polling status 반영
+- Telegram public webhook 배포 아티팩트 준비
+- Telegram public webhook용 nginx reverse proxy 예제 작성
+- Telegram public webhook용 systemd service 예제 작성
+- Telegram public webhook용 placeholder env 예제 작성
+- Telegram public webhook용 helper script 작성
+- Telegram public webhook 배포 가이드 작성
+- `bling` sibling repo 병렬 제어 가능성 검토
+- `bling` landing/public hosting의 Telegram 도메인 연결 적합성 검토
+- `ai.humantric.net` 분리 아키텍처 설계
+- future `ai.humantric.net` web dashboard route 구조 설계
+- route별 auth gate / role matrix 설계
+- repository mode selection 설계
+- auth provider / OIDC 설계
+- auth provider 후보 비교와 선택 기준 설계
+- future web dashboard wireframe 구조 설계
+- auth provider별 integration sequence 설계
+- future web dashboard component map 설계
+- future web dashboard implementation backlog 설계
+- auth/session API contract 세분화
+- `Mozzy-ai-team` vNext 제품 정의 문서화
+- 루트 `README.md`의 제품 허브형 재작성
+- same-repo Python Gemini orchestrator skeleton 구현
+- Dart backend AI orchestrator broker 구현
+- backend `agent graph` API 구현
+- 14-agent interactive control panel 구현
+- Flutter web-safe bootstrap 정리
+- future web dashboard route-driven shell 1차 구현
+- same-origin auth/session bootstrap 1차 구현
+- business API role enforcement 1차 구현
+- same-origin login-first bootstrap 강화
+- OIDC/provider adapter 1차 구현
 
 ## Out of Scope
 
@@ -75,6 +213,8 @@ Telegram polling mode 구현
 - 보안/개인정보/결제 로직 변경
 - 실제 Telegram/WhatsApp production webhook 개통
 - 실제 WhatsApp live command 구현
+- 실제 Gemini production key 운영 전환
+- 실제 OIDC provider production 연결
 
 ## Deliverables
 
@@ -106,6 +246,28 @@ Telegram polling mode 구현
 26. `docs/04_specs/HNI_CHANNEL_LIVE_INTEGRATION_PHASE1.md`
 27. `docs/04_specs/HNI_TELEGRAM_V12_SCOPE.md`
 28. `hni_auto_company_mvp/lib/src/telegram_integration.dart`
+29. `hni_auto_company_mvp/deploy/nginx/ai.humantric.net.conf`
+30. `hni_auto_company_mvp/deploy/systemd/hni-auto-company-backend.service`
+31. `hni_auto_company_mvp/deploy/env/telegram_public.example.env`
+32. `hni_auto_company_mvp/deploy/scripts/set_telegram_webhook.sh`
+33. `hni_auto_company_mvp/deploy/scripts/delete_telegram_webhook.sh`
+34. `hni_auto_company_mvp/deploy/scripts/check_telegram_status.sh`
+35. `hni_auto_company_mvp/docs/TELEGRAM_PUBLIC_WEBHOOK_DEPLOY.md`
+36. `docs/04_specs/HNI_AI_SUBDOMAIN_ARCHITECTURE.md`
+37. `docs/04_specs/HNI_AI_WEB_DASHBOARD_ROUTES.md`
+38. `docs/04_specs/HNI_AI_WEB_DASHBOARD_AUTH_MATRIX.md`
+39. `docs/04_specs/HNI_REPOSITORY_MODE_SELECTION.md`
+40. `docs/04_specs/HNI_AI_AUTH_OIDC_DESIGN.md`
+41. `docs/04_specs/HNI_AI_AUTH_PROVIDER_COMPARISON.md`
+42. `docs/04_specs/HNI_AI_WEB_DASHBOARD_WIREFRAMES.md`
+43. `docs/04_specs/HNI_AI_AUTH_PROVIDER_INTEGRATION_SEQUENCES.md`
+44. `docs/04_specs/HNI_AI_WEB_DASHBOARD_COMPONENT_MAP.md`
+45. `docs/04_specs/HNI_AI_WEB_IMPLEMENTATION_BACKLOG.md`
+46. `docs/04_specs/HNI_AI_AUTH_SESSION_API_CONTRACT.md`
+47. `docs/04_specs/MOZZY_AI_TEAM_VNEXT.md`
+48. `docs/04_specs/HNI_GEMINI_ORCHESTRATOR_CONTRACT.md`
+49. `services/hni_gemini_orchestrator/`
+50. `README.md`
 
 ## Execution Sequence
 
@@ -155,6 +317,48 @@ Telegram polling mode 구현
 25. public webhook 없이도
     Telegram direct message를 backend로 intake할 수 있도록
     polling mode와 poll-once helper를 구현한다.
+26. production action 없이도
+    public domain webhook 배포를 준비할 수 있도록
+    nginx/systemd/env/script/documentation 아티팩트를 만든다.
+27. `bling` landing 검토 결과를 바탕으로
+    `humantric.net`과 `ai.humantric.net`의
+    역할 분리 아키텍처를 설계한다.
+28. HNI dashboard IA를 바탕으로
+    `ai.humantric.net`의 dashboard/auth/api/webhook route 구조를 설계한다.
+29. route 구조를 바탕으로
+    route별 auth gate와 role matrix를 설계한다.
+30. 현재 `API_BASE_URL` 분기를 바탕으로
+    repository mode selection과 future bootstrap 확장 원칙을 설계한다.
+31. `Mozzy-ai-team`의 vNext 제품 정의와
+    Gemini/orchestrator/web/channel 구조를
+    루트 README와 spec 문서 기준으로 재정렬한다.
+32. same-repo Python Gemini orchestrator skeleton과
+    `.env.example`/README/tests를 추가한다.
+33. Dart backend에 AI orchestrator broker,
+    stage-run fallback, `agent graph` API를 추가한다.
+34. Flutter app의 14-agent board를
+    assign / dispatch / hold / report jump가 가능한
+    control panel로 승격한다.
+35. Flutter app이 web target에서도
+    remote/same-origin HTTP repository로 기동되도록
+    persistence/bootstrap을 정리한다.
+36. route/auth matrix를 바탕으로
+    auth provider / OIDC / session 설계를 정리한다.
+37. OIDC 설계를 바탕으로
+    provider 후보 비교와 선택 기준을
+    공식 문서 기준으로 정리한다.
+38. route/auth/session 원칙과
+    기존 Flutter IA를 바탕으로
+    future web dashboard wireframe 구조를 설계한다.
+39. shortlisted auth provider를 바탕으로
+    provider별 integration sequence를 정리한다.
+40. route와 wireframe 구조를 바탕으로
+    future web dashboard component map을 정리한다.
+41. route/auth/component 구조를 바탕으로
+    future web dashboard implementation backlog를 정리한다.
+42. future auth 설계를 바탕으로
+    browser route와 same-origin session endpoint 중심의
+    auth/session API contract를 세분화한다.
 
 ## Risks
 
@@ -190,6 +394,31 @@ Telegram polling mode 구현
 - Home dashboard에서 14-agent가 모두 보임
 - Telegram polling mode로
   webhook 없이도 non-production roundtrip 검증이 가능함
+- Telegram public webhook deployment guide와
+  placeholder 기반 배포 파일이 준비됨
+- `bling` 병렬 제어 한계와
+  landing/domain 연결 조건이 정리됨
+- `ai.humantric.net` 분리 아키텍처와
+  도메인별 책임 경계가 정리됨
+- `ai.humantric.net`의
+  future web dashboard route namespace가 정리됨
+- future dashboard route별
+  auth gate와 role matrix가 정리됨
+- repository mode selection과
+  bootstrap 확장 원칙이 정리됨
+- future web dashboard용
+  auth provider / OIDC / session 원칙이 정리됨
+- auth provider 후보 비교와
+  선택 기준이 정리됨
+- future web dashboard용
+  wireframe 구조가 정리됨
+- shortlisted auth provider별
+  integration sequence가 정리됨
+- future web dashboard의
+  component map이 정리됨
+- future web dashboard의
+  implementation backlog가 정리됨
+- auth/session API contract가 정리됨
 - HNI 대시보드의 Flutter 위젯 단위 IA/spec이 정의됨
 - 무엇을 도입하고 무엇을 금지할지 구분됨
 - 승인된 설계 범위의 문서 패키지가 완성됨
@@ -240,5 +469,61 @@ Telegram polling mode 구현
   Telegram polling mode 구현도 범위에 포함한다.
 - 사용자 추가 요청으로
   Telegram polling live roundtrip 직접 검증도 범위에 포함한다.
-- 앱 코드 수정과 배포는 여전히 범위 밖이다.
+- 2026-04-10 사용자 추가 요청으로
+  Telegram public webhook 배포 아티팩트와
+  배포 가이드 준비도 범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  `bling` 병렬 제어 가능성과
+  landing/public hosting 기준의
+  Telegram 도메인 연결 적합성 검토도 범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  `ai.humantric.net` 분리 아키텍처 설계도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  future `ai.humantric.net` web dashboard route 구조 설계도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  route별 auth gate / role matrix 설계도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  repository mode selection 설계도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  auth provider / OIDC 설계도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  auth provider 후보 비교와
+  선택 기준 설계도 범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  future web dashboard wireframe 구조 설계도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  auth provider별 integration sequence 설계와
+  future web dashboard component map 설계도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  future web dashboard implementation backlog 설계도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  auth/session API contract 세분화도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  승인된 vNext 범위 안에서
+  future web dashboard의
+  route-driven shell 1차 구현도 이어서 반영한다.
+- 2026-04-10 사용자 추가 요청으로
+  same-origin auth/session bootstrap 1차 구현도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  selected business API role enforcement 1차 구현도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  same-origin login-first bootstrap 강화도
+  범위에 포함한다.
+- 2026-04-10 사용자 추가 요청으로
+  OIDC/provider adapter 1차 구현도
+  범위에 포함한다.
+- 실제 OIDC/provider 연결과
+  production-grade 전면 auth enforcement는
+  여전히 범위 밖이다.
 - `auto-company`는 참조 아키텍처로만 다룬다.

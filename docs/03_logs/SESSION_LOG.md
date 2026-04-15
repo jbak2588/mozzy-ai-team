@@ -738,3 +738,695 @@
 - Next:
   - 필요 시 다음 단계로
     public webhook 구성 또는 추가 live command 검증으로 이어간다
+
+### Session 031
+
+- Goal: Telegram public webhook 배포 아티팩트와 가이드 준비
+- Actions:
+  - 실행계획과 작업 큐에
+    공개 webhook 배포 준비 범위를 반영
+  - `hni_auto_company_mvp/deploy/` 아래에
+    nginx reverse proxy, systemd service,
+    placeholder env, helper scripts를 생성
+  - `hni_auto_company_mvp/docs/` 아래에
+    public webhook deployment guide를 작성
+  - `README.md`에는
+    새 배포 가이드를 가리키는 포인터만 최소 추가
+  - tracked 파일에는
+    실 token/secret/식별자를 넣지 않고
+    placeholder만 남기는 원칙을
+    합의 문서에 기록
+- Result:
+  - `ai.humantric.net` 예시 기준의
+    public HTTPS webhook 배포 아티팩트 세트가 준비됨
+  - backend는 계속 `127.0.0.1:8787`에 두고,
+    reverse proxy가 public 443을 받아 전달하는 구조가
+    문서와 예제 파일에 고정됨
+  - public webhook profile에서
+    polling 비활성화 원칙과
+    외부 서버에서 사용자가 직접 해야 할 단계가
+    명확히 정리됨
+- Next:
+  - 필요 시 다음 단계로
+    실제 서버에 nginx/systemd/env를 적용한다
+  - 이후 public webhook 등록과
+    end-to-end runtime verification을 진행한다
+
+### Session 032
+
+- Goal: `bling` 병렬 제어 가능성과 landing/domain 적합성 점검
+- Actions:
+  - sibling repo `/Users/jbak2588/bling`의
+    `public/index.html`, `firebase.json`,
+    `doc/web_lite_deploy_guide.md`를 읽어
+    현재 hosting/domain 구조를 확인
+  - HNI 쪽
+    `HNI_AUTO_COMPANY_PROGRAM.md`,
+    `HNI_AUTO_COMPANY_V11_SCOPE.md`를 다시 읽어
+    repo integration과 live control 경계를 대조
+  - 그 결과를
+    병렬 제어 가능 여부와
+    Telegram internal domain 연결 가능 여부로 분리해 판단
+- Result:
+  - 현재 HNI MVP는
+    `bling`을 work order 대상과 branch target으로는 다룰 수 있지만,
+    GitHub live sync나 repo 직접 제어까지 가진 상태는 아님을 확인
+  - `bling` landing은
+    `humantric.net` 루트 정적 페이지이고,
+    Firebase Hosting catchall rewrite 때문에
+    현재 상태로는 Telegram webhook/internal domain endpoint를 직접 수용하지 못함을 확인
+  - 따라서 권장 구조는
+    landing은 기존 `humantric.net`,
+    Telegram/HNI backend는 별도 `ai.humantric.net` 같은
+    subdomain으로 분리하는 방식으로 정리됨
+- Next:
+  - 필요 시 다음 단계로
+    `bling` landing에 Telegram deep link/button만 추가할지 검토한다
+  - 또는 별도 subdomain 기반 server/rewrite 구성을 설계한다
+
+### Session 033
+
+- Goal: `ai.humantric.net` 분리 아키텍처 설계
+- Actions:
+  - 기존 `bling` hosting 구조와
+    HNI Telegram public webhook 배포 가이드를 바탕으로
+    분리형 도메인 토폴로지를 설계
+  - `humantric.net`과 `ai.humantric.net`의
+    역할, DNS/TLS, reverse proxy, landing 연동 규칙을
+    별도 스펙 문서로 정리
+  - Telegram public webhook 배포 가이드에
+    이 분리 아키텍처 문서를 참조하는 포인터를 추가
+- Result:
+  - `humantric.net = landing/web preview`,
+    `ai.humantric.net = HNI control/backend/webhook`
+    구조가 권장 canonical topology로 고정됨
+  - landing host에는
+    webhook를 싣지 않고
+    CTA/deep link만 연결하는 원칙이 명확해짐
+- Next:
+  - 필요 시 다음 단계로
+    `bling` landing CTA 문구/버튼 설계를 진행한다
+  - 또는 `ai.humantric.net`용
+    web dashboard route 설계를 추가한다
+
+### Session 034
+
+- Goal: `ai.humantric.net` future web dashboard route 구조 설계
+- Actions:
+  - 기존 `HNI_DASHBOARD_FLUTTER_IA.md`의
+    섹션/화면 경로를 읽어
+    web route namespace로 재구성
+  - `dashboard`, `auth`, `api`, `telegram webhook`
+    경계를 분리하는 canonical path 규칙을 정의
+  - route spec 문서를 추가하고
+    subdomain architecture와의 관계를 정리
+- Result:
+  - `ai.humantric.net` 아래에서
+    operator UI는 `/dashboard/**`,
+    auth는 `/auth/**`,
+    API는 `/api/v1/**`로 분리하는
+    권장 route 체계가 고정됨
+  - Telegram webhook path는
+    기존 `/api/v1/integrations/telegram/webhook`를 유지하면서
+    future dashboard UI와 충돌하지 않는 구조가 마련됨
+- Next:
+  - 필요 시 다음 단계로
+    `/dashboard` route별 auth gate와 role matrix를 설계한다
+  - 또는 future web dashboard wireframe 구조를 설계한다
+
+### Session 035
+
+- Goal: `ai.humantric.net` route별 auth gate / role matrix 설계
+- Actions:
+  - route spec과 기존 Flutter IA를 바탕으로
+    role hierarchy와 auth gate 유형을 정의
+  - `/dashboard`, `/auth`, `/api`, Telegram webhook path를
+    route별 최소 권한과 redirect 규칙으로 매핑
+  - 별도 auth matrix 문서를 추가하고
+    route spec 문서에서 참조하도록 연결
+- Result:
+  - future web dashboard에 필요한
+    canonical role hierarchy와
+    route별 auth gate 규칙이 정리됨
+  - `/dashboard/approvals`, `/dashboard/strategy` 같은
+    민감 route는 Approver/CEO 중심으로,
+    Telegram webhook는 Machine 전용으로
+    고정됨
+- Next:
+  - 필요 시 다음 단계로
+    role별 세션 정책과 auth provider/OIDC 설계를 진행한다
+  - 또는 web dashboard wireframe 구조 설계로 이어간다
+
+### Session 036
+
+- Goal: repository mode selection 설계
+- Actions:
+  - `lib/main.dart`의
+    `apiBaseUrl.isEmpty` 분기와
+    `FileAppRepository` / `HttpAppRepository` 구조를 재검토
+  - `v1.1` 문서와 현재 repository abstraction을 바탕으로
+    local-file mode, backend-connected mode,
+    future web/admin mode의 bootstrap 규칙을 정리
+  - 별도 설계 문서를 추가하고
+    현재 구현 해석과 future 확장 원칙을 명문화
+- Result:
+  - 현재 분기가
+    v1.1 desktop 2-mode selector라는 점이 정리됨
+  - future web/dashboard 단계에서는
+    explicit mode 또는 factory 기반 bootstrap로 가야 한다는
+    확장 원칙이 정리됨
+- Next:
+  - 필요 시 다음 단계로
+    auth provider/OIDC 설계로 이어간다
+  - 또는 repository factory 실제 코드 구조 설계를 추가한다
+
+### Session 037
+
+- Goal: future web dashboard의 auth provider / OIDC 설계
+- Actions:
+  - route/auth matrix, subdomain 구조,
+    repository selection 문서를 바탕으로
+    human auth 방식을 정리
+  - OIDC flow, callback path, session cookie,
+    role claim mapping, step-up auth 범위를
+    별도 설계 문서로 작성
+  - 기존 route/auth matrix 문서와
+    새 auth 설계 문서를 서로 참조하도록 연결
+- Result:
+  - `ai.humantric.net`의 human auth는
+    OIDC Authorization Code + PKCE와
+    server-side session cookie 중심으로 가는 것이
+    canonical 방향으로 정리됨
+  - machine webhook와 human session을 분리하는 원칙,
+    role claim mapping, recent-auth 보호 경계가
+    문서로 고정됨
+- Next:
+  - 필요 시 다음 단계로
+    auth provider 후보 비교와 선택 기준을 더 세분화한다
+  - 또는 web dashboard wireframe 구조 설계로 이어간다
+
+### Session 038
+
+- Goal: auth provider 후보 비교와 선택 기준 세분화
+- Actions:
+  - `HNI_AI_AUTH_OIDC_DESIGN.md`와
+    route/auth matrix를 다시 읽고
+    provider 선택에 필요한 평가축을 고정
+  - Microsoft Entra ID, Okta, Auth0,
+    Google Cloud Identity Platform/IAP 관련
+    공식 문서를 기준으로
+    PKCE, claim, MFA/step-up, 운영 적합성을 비교
+  - 별도 comparison 문서를 추가하고
+    HNI용 provisional recommendation을 정리
+- Result:
+  - provider 선택의 우선순위를
+    "기존 workforce IdP 재사용 여부"로 먼저 두고,
+    신규 선택 시의 평가 기준이 문서로 고정됨
+  - internal operator dashboard 중심에서는
+    Entra/Okta를 primary candidate로,
+    Auth0와 Google 경로는 조건부 후보로
+    보는 provisional recommendation이 정리됨
+- Next:
+  - provider comparison 문서 lint를 통과시키고
+    future web dashboard wireframe 설계로 이어간다
+
+### Session 039
+
+- Goal: future web dashboard wireframe 구조 설계
+- Actions:
+  - 기존 Flutter IA, route spec, auth matrix,
+    OIDC/provider comparison 문서를 다시 읽고
+    화면 설계 제약을 정리
+  - `ai.humantric.net`의 주요 route에 대해
+    global shell, pane 구조, auth state banner,
+    desktop-first panel 배치를 wireframe 문서로 작성
+  - wireframe 문서를
+    route spec과 auth matrix에서 바로 이어 읽을 수 있게
+    상호 참조를 추가
+- Result:
+  - future web dashboard가
+    internal control plane 성격의
+    split-pane ops console로 정의됨
+  - `/dashboard/home`, `/orders`, `/approvals`,
+    `/channels`, `/mozzy-board` 등
+    핵심 route의 정보 우선순위와 패널 구성이
+    route/auth 원칙과 함께 연결됨
+- Next:
+  - 필요 시 다음 단계로
+    auth provider별 실제 integration sequence를 세분화한다
+  - 또는 wireframe을 기반으로
+    future web dashboard component map으로 이어간다
+
+### Session 040
+
+- Goal: auth provider별 실제 integration sequence 설계
+- Actions:
+  - OIDC 설계, provider comparison,
+    auth matrix 문서를 다시 읽고
+    HNI backend 기준 공통 auth spine을 고정
+  - Microsoft Entra ID, Okta, Auth0,
+    Google Identity Platform/IAP 경로에 대해
+    app registration, redirect/callback, logout,
+    claim normalization, session issue 순서를 비교 정리
+  - provider별 manual registration 값과
+    HNI route 대응값을
+    별도 sequence 문서로 정리
+- Result:
+  - provider가 달라도
+    HNI는 동일한 callback/session/role mapping spine을 유지하고,
+    차이는 registration/logout/claim source 수준으로
+    제한하는 원칙이 문서화됨
+  - 실제 provider 선정 이후 바로
+    implementation backlog로 내릴 수 있는
+    sequence 문서가 준비됨
+- Next:
+  - wireframe 기준으로
+    future web dashboard component map을 작성한다
+
+### Session 041
+
+- Goal: future web dashboard component map 설계
+- Actions:
+  - wireframe, route spec, auth matrix,
+    현재 Flutter desktop IA를 바탕으로
+    web dashboard를 feature/module/component 단위로 재분해
+  - shared shell, auth/session layer,
+    route feature modules, data/query layer,
+    integration surface를 분리한 component map 문서를 작성
+  - route와 wireframe 문서에서
+    component map으로 이어지는 참조를 정리
+- Result:
+  - future web dashboard가
+    shell component, feature module,
+    provider/session layer, data boundary 기준으로
+    실제 구현 가능한 구조로 세분화됨
+  - 다음 단계에서
+    web implementation backlog 또는 frontend package layout으로
+    바로 내려갈 수 있는 수준의 component map이 준비됨
+- Next:
+  - 필요 시 다음 단계로
+    web implementation backlog를 route/module 기준으로 작성한다
+  - 또는 auth/session contract를 API 수준으로 세분화한다
+
+### Session 042
+
+- Goal: future web dashboard implementation backlog 작성
+- Actions:
+  - route spec, auth matrix, wireframe,
+    integration sequence, component map 문서를 다시 읽고
+    구현 순서를 delivery slice 기준으로 재정렬
+  - foundation, core ops, domain feature,
+    hardening 단계로 나눠
+    backlog 항목과 acceptance 기준을 문서화
+  - component map 문서의 route별 heading 불일치를
+    같은 흐름 안에서 정합화
+- Result:
+  - web dashboard를
+    실제 구현 backlog로 바로 내릴 수 있는
+    phase/work item 문서가 준비됨
+  - 첫 구현 순서가
+    `app_shell -> auth/session -> home -> orders -> approvals -> channels`
+    로 고정됨
+- Next:
+  - 필요 시 다음 단계로
+    auth/session API contract를 세분화한다
+  - 또는 web implementation backlog를
+    sprint 단위 실행계획으로 다시 나눈다
+
+### Session 043
+
+- Goal: auth/session API contract 세분화
+- Actions:
+  - OIDC 설계, provider sequence,
+    auth matrix, implementation backlog,
+    현재 backend API 스타일을 함께 읽고
+    future same-origin contract 경계를 정리
+  - browser auth route와 JSON session endpoint를 분리하는
+    contract 문서를 작성
+  - route spec, auth matrix, backlog, sequence 문서와
+    상호 참조를 맞추고
+    sequence 문서의 provider heading 불일치도 함께 수정
+- Result:
+  - `/auth/*`와 `/api/v1/session*`의
+    역할 경계, payload, error, cookie, CSRF 규칙이
+    하나의 문서로 정리됨
+  - future web 구현에서
+    auth bootstrap과 route gate를
+    어떤 endpoint와 payload에 맞출지 명확해짐
+- Next:
+  - 필요 시 다음 단계로
+    `WB-001`~`WB-005`를 sprint 1 실행계획으로 세분화한다
+  - 또는 auth/session contract를
+    backend DTO와 frontend model로 더 세분화한다
+
+### Session 044
+
+- Goal: `Mozzy-ai-team` vNext 계획을 실제 구현으로 전환
+- Actions:
+  - 루트 `README.md`를
+    제품 정의 + 아키텍처 + 로드맵 + 문서 허브 기준으로 전면 재작성
+  - `docs/04_specs/MOZZY_AI_TEAM_VNEXT.md`,
+    `docs/04_specs/HNI_GEMINI_ORCHESTRATOR_CONTRACT.md`를 추가해
+    vNext 정의와 Python AI service 경계를 고정
+  - `services/hni_gemini_orchestrator/` 아래에
+    FastAPI 기반 Gemini orchestrator skeleton,
+    `.env.example`, `requirements.txt`, `pytest`를 추가
+  - Flutter/Dart codebase에
+    web-safe repository bootstrap,
+    `HNI_AI_ORCHESTRATOR_BASE_URL` 기반 broker,
+    `agent graph` API,
+    interactive 14-agent control panel을 구현
+- Result:
+  - 저장소가
+    운영 문서 중심 설명에서
+    HNI용 14-persona AI control plane 제품 정의로 재정렬됨
+  - same-repo Python Gemini orchestrator skeleton이 추가됨
+  - Dart backend가 stage-run/agent-graph contract를 이해하게 됨
+  - Flutter app의 14-agent board가
+    assign / dispatch / hold / report jump가 가능한 control panel로 승격됨
+  - `flutter analyze`, `flutter test`,
+    `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8787`,
+    `pytest`, `markdownlint-cli@0.40.0` 검증까지 완료됨
+- Next:
+  - 필요 시 GitHub 반영으로 이어간다
+  - 또는 web/auth 후속 slice로 이어간다
+
+### Session 045
+
+- Goal: future web dashboard route-driven shell 1차 구현
+- Actions:
+  - Flutter app에 `go_router`를 추가하고
+    기존 `_section` 기반 단일 화면 구조를
+    route-driven shell로 전환
+  - `/dashboard/home`, `/dashboard/squads`,
+    `/dashboard/orders`, `/dashboard/reports`,
+    `/dashboard/approvals`, `/dashboard/channels`,
+    `/dashboard/audit` direct route를 연결
+  - `/auth/login`, `/auth/forbidden`,
+    `/auth/session-expired` placeholder route를 추가하고,
+    sidebar navigation이 browser route를 직접 바꾸도록 정리
+  - local store에서
+    immutable default persona list를 수정하던
+    회귀를 `List.from(...)` 정규화로 수정
+  - widget test에
+    deep-link route open, auth placeholder, sidebar route 전환 케이스를 추가
+- Result:
+  - Flutter web에서
+    dashboard section을 browser URL로 직접 열 수 있게 됨
+  - auth/provider 실연동 전 단계에서도
+    `/auth/*` placeholder route와
+    `/dashboard/*` shell을 같은 앱 안에서 검증할 수 있게 됨
+  - `flutter analyze`, `flutter test`,
+    `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8787`,
+    `/tmp/mozzy_ai_team_py/bin/python -m pytest services/hni_gemini_orchestrator/tests`
+    검증을 통과함
+- Next:
+  - 필요 시 다음 slice로
+    same-origin auth/session bootstrap을 실제 API 호출로 연결한다
+  - 또는 `/dashboard/home`와 `/dashboard/squads` 기준의
+    richer web interaction을 이어서 구현한다
+
+### Session 046
+
+- Goal: same-origin auth/session bootstrap 1차 구현
+- Actions:
+  - `auth_session.dart`를 추가해
+    role hierarchy, session payload model,
+    same-origin session controller,
+    bootstrap login/logout client를 구현
+  - backend에
+    `AuthBootstrapConfig`와
+    `/api/v1/session`,
+    `/api/v1/session/bootstrap`,
+    `/api/v1/session/logout` endpoint를 추가
+  - Flutter app router에
+    session-based redirect와 role gate를 연결하고,
+    `/auth/loading`, `/auth/login`, `/auth/forbidden`,
+    `/auth/session-expired` flow를
+    bootstrap session 기준으로 정리
+  - top header에
+    current principal/role 표시와 sign-out action을 추가
+  - session endpoint/controller/widget 회귀용 테스트를 추가
+- Result:
+  - same-origin backend가 있으면
+    web shell이 session payload를 읽고
+    `/dashboard/*` 접근 여부를 role 기준으로 계산하게 됨
+  - provider 없는 bootstrap session으로도
+    login -> dashboard -> logout 흐름을
+    non-production 기준으로 먼저 검증할 수 있게 됨
+  - `flutter analyze`, `flutter test`,
+    `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8787`,
+    `python3 -m venv /tmp/mozzy_ai_team_py`,
+    `pytest`, `markdownlint-cli@0.40.0` 기준 검증을 진행함
+- Next:
+  - 필요 시 다음 slice로
+    business API role enforcement를 backend에 단계적으로 연결한다
+  - 또는 OIDC/provider adapter를
+    same-origin session contract 위에 얹는다
+
+### Session 047
+
+- Goal: business API role enforcement 1차 구현
+- Actions:
+  - backend에
+    selected business API별 최소 role과
+    CSRF 검증을 추가하고,
+    Telegram webhook는
+    machine ingress로 분리 유지
+  - `HttpAppRepository`와
+    `AuthSessionController`를 연결해
+    same-origin cookie와 CSRF를
+    protected request에 함께 전달
+  - Home/Squads/Orders/Approvals/Channels 화면에서
+    role matrix에 맞지 않는 action button을
+    disable 처리
+  - widget/integration test를 보강하고,
+    Telegram poll-once test도
+    admin session + CSRF 기준으로 갱신
+  - `flutter analyze`, `flutter test`,
+    `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8787`,
+    `pytest`, `markdownlint-cli@0.40.0`를 다시 실행
+- Result:
+  - human business API path에
+    Operator/Lead/Approver/Admin 최소 권한이
+    1차로 반영됨
+  - frontend가 backend role matrix와
+    동일한 button enable/disable 규칙을 쓰게 되어
+    권한 부족 403이 UI에서 대부분 사전 차단됨
+  - webhook machine path는 그대로 분리돼
+    Telegram inbound 동작을 깨지 않음
+  - Orders 패널의 좁은 폭 overflow도
+    같은 수정 과정에서 함께 제거됨
+- Next:
+  - 필요 시 다음 slice로
+    OIDC/provider adapter와
+    production-grade auth enforcement를 이어간다
+  - 또는 same-origin bootstrap 기본값을
+    더 엄격한 login-first 흐름으로 재정렬한다
+
+### Session 048
+
+- Goal: same-origin login-first bootstrap 강화
+- Actions:
+  - backend auth bootstrap 기본값을
+    `defaultAuthenticated=false`로 전환
+  - remote mode에서
+    비로그인 상태에도 앱이 깨지지 않도록
+    empty remote shell과
+    login 후 reconnect 흐름을 store/main/app에 추가
+  - `http_repository_test`를
+    anonymous -> bootstrap login -> protected snapshot 성공 흐름으로 갱신
+  - Telegram poll-once test도
+    manual bootstrap cookie 기준으로 정리
+  - `flutter analyze`, `flutter test`,
+    `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8787`,
+    `pytest`, `markdownlint-cli@0.40.0`를 다시 실행
+- Result:
+  - same-origin auth가
+    login-first 방향으로 한 단계 더 엄격해짐
+  - remote web shell은
+    비로그인 상태에서 빈 shell로 뜨고,
+    bootstrap login 후에만
+    실제 snapshot을 붙이게 됨
+  - 이후 OIDC/provider adapter를 붙일 때
+    anonymous shell -> auth -> reconnect 경로를
+    그대로 재사용할 수 있게 됨
+- Next:
+  - 필요 시 다음 slice로
+    OIDC/provider adapter를 구현한다
+  - 또는 same-origin bootstrap helper를
+    provider-aware callback 구조로 치환한다
+
+### Session 049
+
+- Goal: OIDC/provider adapter 1차 구현
+- Actions:
+  - `auth_provider_adapter.dart`를 추가해
+    `bootstrap` / `mock_oidc` adapter abstraction과
+    browser auth challenge flow를 구현
+  - backend에
+    `/auth/login`, `/auth/callback`, `/auth/logout`
+    route를 추가하고,
+    callback 결과를 tokenized session issuance로 연결
+  - 기존 stateless bootstrap cookie 경로를
+    issued session token map으로 정리
+  - health payload와 server startup log에
+    auth provider mode를 노출
+  - backend test에
+    `mock_oidc` login -> callback -> session 검증을 추가
+  - `flutter analyze`, `flutter test`,
+    `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8787`,
+    `pytest`, `markdownlint-cli@0.40.0`를 다시 실행
+- Result:
+  - backend가 browser auth route와
+    provider adapter abstraction을 갖게 됨
+  - same-origin auth 구조가
+    bootstrap helper만 있는 상태에서
+    provider-aware redirect/callback 구조로 한 단계 전진함
+  - 현재는 `bootstrap`과 `mock_oidc`까지 동작하고,
+    실제 external OIDC token exchange는
+    후속 slice로 남김
+- Next:
+  - 필요 시 다음 slice로
+    Entra/Okta/Auth0 중 하나의 real provider adapter를 붙인다
+  - 또는 frontend login route를
+    browser auth route와 직접 연결한다
+
+### Session 050
+
+- Goal: 로컬 프런트엔드 프리뷰 실행 경로 확정
+- Actions:
+  - AGENTS 지침에 따라
+    `WORKFLOW.md`, `APPROVAL_RULES.md`,
+    `EXECUTION_PLAN.md`, `TASK_QUEUE.md`,
+    `CONSENSUS.md`를 먼저 재확인
+  - 현재 계획 상태가 `APPROVED`임을 확인하고,
+    이번 요청을 승인 범위 내 local preview 실행으로 해석
+  - 루트 `README.md`와
+    `hni_auto_company_mvp/README.md`의
+    web/backend 실행 경로를 재검토
+  - `flutter devices`와 포트 점검으로
+    로컬 browser preview 가능 여부를 확인
+- Result:
+  - 프런트엔드는
+    Flutter web client + local Dart backend 조합으로
+    띄우는 것이 적절하다고 정리함
+  - 다음 단계에서 backend와 browser preview를 실제로 기동한다
+- Next:
+  - backend를 `127.0.0.1:8787`로 실행
+  - Flutter web client를 실행해
+    사용자가 직접 볼 수 있는 로컬 화면을 연다
+
+### Session 051
+
+- Goal: 로컬 프런트엔드 프리뷰 실제 기동
+- Actions:
+  - `dart run bin/server.dart`를 먼저 실행했으나
+    `auth_session.dart -> package:flutter/foundation.dart`
+    경유로 `dart:ui` 의존성이 생겨
+    backend가 기동하지 않는 blocker를 확인
+  - auth/session 모델을
+    `auth_session_models.dart`로 분리하고,
+    Flutter `ChangeNotifier` controller는
+    기존 `auth_session.dart`에 남겨
+    server/runtime 경계를 정리
+  - 수정 후 backend를 다시 실행해
+    `http://127.0.0.1:8787`에서 정상 기동을 확인
+  - 이어 `flutter run -d chrome --web-port 3000 --dart-define=API_BASE_URL=http://127.0.0.1:8787`
+    로 web client를 실행하고
+    Chrome 브라우저를 로컬 root URL로 열었다
+  - 마지막으로
+    `curl http://127.0.0.1:8787/api/v1/session`과
+    `flutter test test/backend_service_test.dart test/auth_session_test.dart`
+    를 실행해
+    session/bootstrap 경로 회귀가 없는지 확인
+- Result:
+  - local backend가
+    `dart run` 경로에서 다시 실행 가능해졌다
+  - Flutter web 프런트엔드가
+    Chrome preview로 기동됐다
+  - targeted backend/auth test가 통과했고,
+    session endpoint도 정상 응답했다
+  - 사용자는 로컬 브라우저에서
+    로그인 화면을 보고
+    `Bootstrap Session`으로 dashboard에 들어갈 수 있다
+- Next:
+  - 필요 시 현재 preview 세션을 유지한 채
+    추가 화면 점검이나 UI 수정으로 이어간다
+
+### Session 052
+
+- Goal: 브라우저 dashboard 진입 실패 원인 확인
+- Actions:
+  - 사용자 첨부 화면 기준으로
+    `/api/v1/session/bootstrap` fetch 실패를
+    browser-to-backend bridge 문제로 가정
+  - backend 라우트와 middleware를 재확인해
+    현재 `OPTIONS` preflight 처리가 없음을 확인
+  - `curl -X OPTIONS`로
+    `http://127.0.0.1:8787/api/v1/session/bootstrap`
+    에 브라우저와 유사한 preflight를 보내
+    실제 응답이 `404 Route not found`임을 확인
+  - 같은 endpoint에 직접 `POST`하면
+    backend 자체는 `200`으로 응답하는 것도 함께 확인
+  - `package:http`의 web `BrowserClient` 기본값을 확인해
+    cross-origin 요청에서
+    `withCredentials=false`가 기본임을 확인
+- Result:
+  - 문제는 backend business logic이 아니라
+    local web preview의 CORS/preflight 처리와
+    browser credential 전달 경계에 있다고 정리됨
+- Next:
+  - backend에 local preview용 CORS/OPTIONS 지원 추가
+  - web client가 credential 포함 fetch를 사용하도록 정리
+
+### Session 053
+
+- Goal: local web dashboard bootstrap 실패 수정
+- Actions:
+  - backend에
+    loopback origin용 CORS middleware를 추가해
+    `OPTIONS` preflight와
+    credentialed session response를 지원
+  - `AuthSessionController`와
+    `HttpAppRepository`가
+    web remote mode에서
+    credential 포함 `BrowserClient`를 사용하도록
+    platform-aware HTTP client factory를 추가
+  - backend test에
+    local preview CORS preflight/session 응답 검증을 추가
+  - `flutter test test/backend_service_test.dart test/auth_session_test.dart`
+    와
+    `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8787`
+    로 회귀를 확인
+  - 기존 backend/web preview 세션을 재시작하고
+    `curl` 기준으로
+    `OPTIONS /api/v1/session/bootstrap -> 204`,
+    `GET /api/v1/session -> Access-Control-Allow-Origin/Credentials`
+    응답을 다시 확인
+- Result:
+  - 브라우저 bootstrap 실패 원인이던
+    preflight `404`와 credential 누락 경로가 함께 정리됨
+  - local Chrome preview에서
+    dashboard 진입에 필요한 session bootstrap 경로가
+    다시 성립하는 상태가 됨
+- Next:
+  - 필요 시 사용자가 본 실제 브라우저 화면 기준으로
+    추가 회귀나 UI 동작을 이어서 점검한다
+
+### Session 054
+
+- Goal: 현재 로컬 상태 전체를 커밋하고 원격에 푸시
+- Actions:
+  - 사용자 요청을
+    현 시점 worktree 전체 publish로 해석
+  - `github:yeet` 흐름에 맞춰
+    현재 git 상태, branch, remote, 최근 커밋을 확인
+  - 이어서 diff 범위를 요약하고
+    적절한 커밋 메시지로 staging/commit/push를 진행
+- Result:
+  - 진행 중
+- Next:
+  - 전체 worktree를 staging
+  - 커밋 생성
+  - 현재 branch를 origin으로 푸시

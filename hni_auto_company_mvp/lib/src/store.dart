@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'agent_catalog.dart';
 import 'command_parser.dart';
 import 'models.dart';
 import 'persistence.dart';
@@ -20,6 +21,7 @@ class AutoCompanyStore extends ChangeNotifier {
   Timer? _remotePollingTimer;
   bool _remoteRefreshInFlight = false;
   BackendHealth? _backendHealth;
+  AgentGraph? _selectedAgentGraph;
 
   static Future<AutoCompanyStore> load(
     AppRepository repository, {
@@ -29,8 +31,8 @@ class AutoCompanyStore extends ChangeNotifier {
     final snapshot = loaded == null
         ? _seedSnapshot()
         : repository.isRemote
-            ? _prepareRemoteSnapshot(loaded)
-            : _normalizeSnapshot(loaded);
+        ? _prepareRemoteSnapshot(loaded)
+        : _normalizeSnapshot(loaded);
     final store = AutoCompanyStore._(
       repository,
       snapshot,
@@ -39,8 +41,24 @@ class AutoCompanyStore extends ChangeNotifier {
     if (repository.isRemote) {
       await store._refreshBackendHealth();
       store._startRemotePolling();
+      await store._refreshSelectedAgentGraph();
     } else {
       store._resumeEligibleOrders();
+    }
+    return store;
+  }
+
+  static Future<AutoCompanyStore> loadRemoteShell(
+    AppRepository repository, {
+    Duration stageDelay = const Duration(milliseconds: 700),
+  }) async {
+    final store = AutoCompanyStore._(
+      repository,
+      _emptySnapshot(),
+      stageDelay: stageDelay,
+    );
+    if (repository.isRemote) {
+      await store._refreshBackendHealth();
     }
     return store;
   }
@@ -115,13 +133,13 @@ class AutoCompanyStore extends ChangeNotifier {
 
   int get activeRunCount => isRemoteMode
       ? _snapshot.orders
-          .where(
-            (item) =>
-                item.status == OrderStatus.inProgress ||
-                item.status == OrderStatus.evaluation ||
-                item.status == OrderStatus.revise,
-          )
-          .length
+            .where(
+              (item) =>
+                  item.status == OrderStatus.inProgress ||
+                  item.status == OrderStatus.evaluation ||
+                  item.status == OrderStatus.revise,
+            )
+            .length
       : _activeRuns.length;
 
   int get pendingApprovalCount => approvalQueue.length;
@@ -137,12 +155,45 @@ class AutoCompanyStore extends ChangeNotifier {
       )
       .length;
 
-  int get completedCount =>
-      _snapshot.orders.where((item) => item.status == OrderStatus.completed).length;
+  int get completedCount => _snapshot.orders
+      .where((item) => item.status == OrderStatus.completed)
+      .length;
+
+  AgentGraph? get selectedAgentGraph {
+    if (isRemoteMode) {
+      return _selectedAgentGraph;
+    }
+    final order = selectedOrder;
+    return order == null ? null : _buildAgentGraph(order);
+  }
+
+  Future<void> reconnectRemote() async {
+    if (!isRemoteMode) {
+      return;
+    }
+    await _refreshBackendHealth();
+    await _refreshFromRemote();
+    _startRemotePolling();
+  }
+
+  Future<void> enterRemoteShell() async {
+    if (!isRemoteMode) {
+      return;
+    }
+    _remotePollingTimer?.cancel();
+    _remotePollingTimer = null;
+    _snapshot = _emptySnapshot();
+    _selectedAgentGraph = null;
+    await _refreshBackendHealth();
+    notifyListeners();
+  }
 
   void selectOrder(String orderId) {
     _snapshot.selectedOrderId = orderId;
     notifyListeners();
+    if (isRemoteMode) {
+      unawaited(_refreshSelectedAgentGraph());
+    }
     if (!isRemoteMode) {
       unawaited(_persist());
     }
@@ -169,12 +220,14 @@ class AutoCompanyStore extends ChangeNotifier {
       requestedBy: draft.requestedBy,
       sourceChannel: draft.sourceChannel,
       assignedSquad: draft.assignedSquad,
+      assignedPersonaLead: defaultLeadForSquad(draft.assignedSquad),
       status: OrderStatus.approvalPending,
       planSummary: planSummary,
       riskProfile: draft.riskProfile,
       planApproved: false,
       createdAt: now,
       updatedAt: now,
+      selectedPersonas: defaultPersonasForSquad(draft.assignedSquad),
       stageRecords: [
         StageRecord(
           stage: ExecutionStage.strategicReview,
@@ -238,13 +291,8 @@ class AutoCompanyStore extends ChangeNotifier {
           ownerGroup: '전략군 + 제품군 + 엔지니어링군',
           personaLead: 'cto-vogels',
           summary: planSummary,
-          findings: [
-            'approval 이후 자동 연속 실행',
-            'stage 완료 시 report가 누적 생성',
-          ],
-          recommendations: [
-            'CEO plan approval 후 runner 시작',
-          ],
+          findings: ['approval 이후 자동 연속 실행', 'stage 완료 시 report가 누적 생성'],
+          recommendations: ['CEO plan approval 후 runner 시작'],
           createdAt: now,
         ),
       ],
@@ -299,7 +347,8 @@ class AutoCompanyStore extends ChangeNotifier {
     if (order == null) {
       return;
     }
-    final approval = order.pendingApproval(ApprovalType.plan) ??
+    final approval =
+        order.pendingApproval(ApprovalType.plan) ??
         order.pendingApproval(ApprovalType.risk);
     if (approval != null) {
       await approveApproval(orderId, approval.id);
@@ -308,7 +357,10 @@ class AutoCompanyStore extends ChangeNotifier {
 
   Future<void> approveApproval(String orderId, String approvalId) async {
     if (isRemoteMode) {
-      final nextSnapshot = await _repository.approveApproval(orderId, approvalId);
+      final nextSnapshot = await _repository.approveApproval(
+        orderId,
+        approvalId,
+      );
       _applyRemoteSnapshot(nextSnapshot);
       return;
     }
@@ -345,7 +397,8 @@ class AutoCompanyStore extends ChangeNotifier {
       order.planApproved = true;
     }
 
-    if (order.planApproved && order.pendingApproval(ApprovalType.risk) == null) {
+    if (order.planApproved &&
+        order.pendingApproval(ApprovalType.risk) == null) {
       order.status = OrderStatus.planned;
       await _saveAndNotify();
       await _ensureRunner(order.id);
@@ -447,7 +500,10 @@ class AutoCompanyStore extends ChangeNotifier {
           result = 'Approved next pending gate for ${command.orderId}.';
           break;
         case ParsedCommandType.hold:
-          await holdOrder(command.orderId!, note: command.note ?? 'Manual hold');
+          await holdOrder(
+            command.orderId!,
+            note: command.note ?? 'Manual hold',
+          );
           result = 'Held ${command.orderId}.';
           break;
         case ParsedCommandType.resume:
@@ -474,6 +530,75 @@ class AutoCompanyStore extends ChangeNotifier {
     );
     await _saveAndNotify();
     return result;
+  }
+
+  Future<void> assignPersonaLead(String orderId, String persona) async {
+    if (isRemoteMode) {
+      final nextSnapshot = await _repository.assignPersonaLead(
+        orderId,
+        persona,
+      );
+      _applyRemoteSnapshot(nextSnapshot);
+      await _refreshSelectedAgentGraph();
+      return;
+    }
+
+    final order = _findOrder(orderId);
+    if (order == null) {
+      return;
+    }
+    _normalizeOrderPersonas(order);
+    order.assignedPersonaLead = persona;
+    if (!order.selectedPersonas.contains(persona)) {
+      order.selectedPersonas.insert(0, persona);
+    }
+    order.updatedAt = DateTime.now();
+    order.auditTrail.insert(
+      0,
+      AuditEntry(
+        id: _nextId('AU'),
+        orderId: order.id,
+        message: 'Persona lead assigned from dashboard: $persona',
+        createdAt: order.updatedAt,
+      ),
+    );
+    await _saveAndNotify();
+  }
+
+  Future<void> dispatchPersona(String orderId, String persona) async {
+    if (isRemoteMode) {
+      final nextSnapshot = await _repository.dispatchPersona(orderId, persona);
+      _applyRemoteSnapshot(nextSnapshot);
+      await _refreshSelectedAgentGraph();
+      return;
+    }
+
+    final order = _findOrder(orderId);
+    if (order == null) {
+      return;
+    }
+    _normalizeOrderPersonas(order);
+    if (!order.selectedPersonas.contains(persona)) {
+      order.selectedPersonas.add(persona);
+    }
+    order.assignedPersonaLead ??= persona;
+    order.updatedAt = DateTime.now();
+    order.auditTrail.insert(
+      0,
+      AuditEntry(
+        id: _nextId('AU'),
+        orderId: order.id,
+        message: 'Persona dispatched from dashboard: $persona',
+        createdAt: order.updatedAt,
+      ),
+    );
+    await _saveAndNotify();
+    if (order.planApproved &&
+        !order.hasPendingApprovals &&
+        order.status != OrderStatus.completed &&
+        order.status != OrderStatus.hold) {
+      await _ensureRunner(order.id);
+    }
   }
 
   String orderStatusLine(String orderId) {
@@ -581,6 +706,7 @@ class AutoCompanyStore extends ChangeNotifier {
 
   void _resumeEligibleOrders() {
     for (final order in _snapshot.orders) {
+      _normalizeOrderPersonas(order);
       if (order.planApproved &&
           !order.hasPendingApprovals &&
           order.status != OrderStatus.completed) {
@@ -638,12 +764,22 @@ class AutoCompanyStore extends ChangeNotifier {
     try {
       final nextSnapshot = await _repository.fetchSnapshot();
       _applyRemoteSnapshot(nextSnapshot);
+      await _refreshSelectedAgentGraph();
       _backendHealth = await _repository.health();
-    } catch (_) {
+    } catch (error) {
+      final health = await _repository.health();
+      final status = switch (error) {
+        BackendRequestException(:final message) when message.contains('(401)') =>
+          'auth-required',
+        BackendRequestException(:final message) when message.contains('(403)') =>
+          'forbidden',
+        _ => health?.status ?? 'unreachable',
+      };
       _backendHealth = BackendHealth(
-        baseUrl: backendBaseUrl ?? '',
+        baseUrl: health?.baseUrl ?? backendBaseUrl ?? '',
         ok: false,
-        status: 'unreachable',
+        status: status,
+        orchestratorStatus: health?.orchestratorStatus,
       );
       notifyListeners();
     } finally {
@@ -655,8 +791,44 @@ class AutoCompanyStore extends ChangeNotifier {
     final previousSelected = _snapshot.selectedOrderId;
     _snapshot = _prepareRemoteSnapshot(nextSnapshot);
     _snapshot.selectedOrderId ??=
-        previousSelected ?? (_snapshot.orders.isNotEmpty ? _snapshot.orders.first.id : null);
+        previousSelected ??
+        (_snapshot.orders.isNotEmpty ? _snapshot.orders.first.id : null);
     notifyListeners();
+  }
+
+  Future<void> _refreshSelectedAgentGraph() async {
+    if (!isRemoteMode) {
+      return;
+    }
+    final orderId = _snapshot.selectedOrderId;
+    if (orderId == null) {
+      _selectedAgentGraph = null;
+      notifyListeners();
+      return;
+    }
+    try {
+      _selectedAgentGraph = await _repository.fetchAgentGraph(orderId);
+      notifyListeners();
+    } catch (_) {
+      final fallbackOrder = _findOrder(orderId);
+      _selectedAgentGraph = fallbackOrder == null
+          ? null
+          : _buildAgentGraph(fallbackOrder);
+      notifyListeners();
+    }
+  }
+
+  void _normalizeOrderPersonas(WorkOrder order) {
+    order.selectedPersonas = List<String>.from(order.selectedPersonas);
+    if (order.selectedPersonas.isEmpty) {
+      order.selectedPersonas.addAll(
+        defaultPersonasForSquad(order.assignedSquad),
+      );
+    }
+    order.assignedPersonaLead ??= defaultLeadForSquad(order.assignedSquad);
+    if (!order.selectedPersonas.contains(order.assignedPersonaLead)) {
+      order.selectedPersonas.insert(0, order.assignedPersonaLead!);
+    }
   }
 
   String _nextId(String prefix) {
@@ -673,33 +845,31 @@ class AutoCompanyStore extends ChangeNotifier {
   }
 
   String _runningSummaryForStage(ExecutionStage stage) => switch (stage) {
-        ExecutionStage.execution => '엔지니어링군과 제품군이 산출물을 정리 중',
-        ExecutionStage.evaluation => 'critic-munger와 qa-bach가 결과 검토 중',
-        ExecutionStage.revision => '피드백 기반 수정안 반영 중',
-        ExecutionStage.completion => '최종 완료 보고를 작성 중',
-        _ => '',
-      };
+    ExecutionStage.execution => '엔지니어링군과 제품군이 산출물을 정리 중',
+    ExecutionStage.evaluation => 'critic-munger와 qa-bach가 결과 검토 중',
+    ExecutionStage.revision => '피드백 기반 수정안 반영 중',
+    ExecutionStage.completion => '최종 완료 보고를 작성 중',
+    _ => '',
+  };
 
-  String _completedSummaryForStage(WorkOrder order, ExecutionStage stage) =>
-      switch (stage) {
-        ExecutionStage.execution =>
-          '${order.assignedSquad}가 합의된 범위의 실행 산출물을 생성했다.',
-        ExecutionStage.evaluation =>
-          'blocker와 잔여 리스크를 평가하고 completion 조건을 확인했다.',
-        ExecutionStage.revision =>
-          '평가 결과를 반영해 문구와 실행 항목을 보정했다.',
-        ExecutionStage.completion =>
-          'HNI CEO에게 제출할 completion report를 생성했다.',
-        _ => '',
-      };
+  String _completedSummaryForStage(
+    WorkOrder order,
+    ExecutionStage stage,
+  ) => switch (stage) {
+    ExecutionStage.execution => '${order.assignedSquad}가 합의된 범위의 실행 산출물을 생성했다.',
+    ExecutionStage.evaluation => 'blocker와 잔여 리스크를 평가하고 completion 조건을 확인했다.',
+    ExecutionStage.revision => '평가 결과를 반영해 문구와 실행 항목을 보정했다.',
+    ExecutionStage.completion => 'HNI CEO에게 제출할 completion report를 생성했다.',
+    _ => '',
+  };
 
   OrderStatus _statusForStage(ExecutionStage stage) => switch (stage) {
-        ExecutionStage.execution => OrderStatus.inProgress,
-        ExecutionStage.evaluation => OrderStatus.evaluation,
-        ExecutionStage.revision => OrderStatus.revise,
-        ExecutionStage.completion => OrderStatus.completed,
-        _ => OrderStatus.planned,
-      };
+    ExecutionStage.execution => OrderStatus.inProgress,
+    ExecutionStage.evaluation => OrderStatus.evaluation,
+    ExecutionStage.revision => OrderStatus.revise,
+    ExecutionStage.completion => OrderStatus.completed,
+    _ => OrderStatus.planned,
+  };
 
   ReportEntry _buildStageReport(
     WorkOrder order,
@@ -708,83 +878,68 @@ class AutoCompanyStore extends ChangeNotifier {
   ) {
     return switch (stage) {
       ExecutionStage.execution => _buildReport(
-          orderId: order.id,
-          stage: stage,
-          title: 'Execution artifacts produced',
-          ownerGroup: '제품군 + 엔지니어링군',
-          personaLead: 'fullstack-dhh',
-          summary:
-              '${order.assignedSquad}가 ${order.targetProduct}용 실행 산출물을 생성했다.',
-          findings: [
-            order.objective,
-            'branch target: ${order.targetBranch}',
-            '연속 실행 규칙 적용',
-          ],
-          recommendations: [
-            'evaluation 단계에서 blocker만 분리한다.',
-          ],
-          createdAt: createdAt,
-        ),
+        orderId: order.id,
+        stage: stage,
+        title: 'Execution artifacts produced',
+        ownerGroup: '제품군 + 엔지니어링군',
+        personaLead: 'fullstack-dhh',
+        summary:
+            '${order.assignedSquad}가 ${order.targetProduct}용 실행 산출물을 생성했다.',
+        findings: [
+          order.objective,
+          'branch target: ${order.targetBranch}',
+          '연속 실행 규칙 적용',
+        ],
+        recommendations: ['evaluation 단계에서 blocker만 분리한다.'],
+        createdAt: createdAt,
+      ),
       ExecutionStage.evaluation => _buildReport(
-          orderId: order.id,
-          stage: stage,
-          title: 'Evaluation completed',
-          ownerGroup: 'QA + 전략군',
-          personaLead: 'critic-munger',
-          summary: '현재 결과는 합의된 scope 안에서 수용 가능한 상태다.',
-          findings: [
-            'scope drift 없음',
-            '추가 승인 요청 없이 다음 stage 진행 가능',
-          ],
-          recommendations: [
-            'completion report에 잔여 리스크를 명시한다.',
-          ],
-          createdAt: createdAt,
-        ),
+        orderId: order.id,
+        stage: stage,
+        title: 'Evaluation completed',
+        ownerGroup: 'QA + 전략군',
+        personaLead: 'critic-munger',
+        summary: '현재 결과는 합의된 scope 안에서 수용 가능한 상태다.',
+        findings: ['scope drift 없음', '추가 승인 요청 없이 다음 stage 진행 가능'],
+        recommendations: ['completion report에 잔여 리스크를 명시한다.'],
+        createdAt: createdAt,
+      ),
       ExecutionStage.revision => _buildReport(
-          orderId: order.id,
-          stage: stage,
-          title: 'Revision applied',
-          ownerGroup: '엔지니어링군 + 제품군',
-          personaLead: 'ui-duarte',
-          summary: '평가에서 드러난 개선 메모를 반영했다.',
-          findings: [
-            '문구/흐름 정합화',
-            'completion readiness 재확인',
-          ],
-          recommendations: [
-            '완료 보고로 종료한다.',
-          ],
-          createdAt: createdAt,
-        ),
+        orderId: order.id,
+        stage: stage,
+        title: 'Revision applied',
+        ownerGroup: '엔지니어링군 + 제품군',
+        personaLead: 'ui-duarte',
+        summary: '평가에서 드러난 개선 메모를 반영했다.',
+        findings: ['문구/흐름 정합화', 'completion readiness 재확인'],
+        recommendations: ['완료 보고로 종료한다.'],
+        createdAt: createdAt,
+      ),
       ExecutionStage.completion => _buildReport(
-          orderId: order.id,
-          stage: stage,
-          title: 'Completion report ready',
-          ownerGroup: '전략군',
-          personaLead: 'ceo-bezos',
-          summary:
-              '${order.title} work order가 합의된 stage를 끝까지 완료했다.',
-          findings: [
-            'order status: Completed',
-            '추가 승인 요청 없이 agreed chain finished',
-          ],
-          recommendations: [
-            '다음 오더를 새로 생성하거나 후속 epic으로 분리한다.',
-          ],
-          createdAt: createdAt,
-        ),
+        orderId: order.id,
+        stage: stage,
+        title: 'Completion report ready',
+        ownerGroup: '전략군',
+        personaLead: 'ceo-bezos',
+        summary: '${order.title} work order가 합의된 stage를 끝까지 완료했다.',
+        findings: [
+          'order status: Completed',
+          '추가 승인 요청 없이 agreed chain finished',
+        ],
+        recommendations: ['다음 오더를 새로 생성하거나 후속 epic으로 분리한다.'],
+        createdAt: createdAt,
+      ),
       _ => _buildReport(
-          orderId: order.id,
-          stage: stage,
-          title: stage.label,
-          ownerGroup: '전략군',
-          personaLead: 'ceo-bezos',
-          summary: stage.label,
-          findings: const [],
-          recommendations: const [],
-          createdAt: createdAt,
-        ),
+        orderId: order.id,
+        stage: stage,
+        title: stage.label,
+        ownerGroup: '전략군',
+        personaLead: 'ceo-bezos',
+        summary: stage.label,
+        findings: const [],
+        recommendations: const [],
+        createdAt: createdAt,
+      ),
     };
   }
 
@@ -820,6 +975,10 @@ class AutoCompanyStore extends ChangeNotifier {
   }
 }
 
+AppSnapshot _emptySnapshot() {
+  return AppSnapshot(orders: [], commandLogs: []);
+}
+
 AppSnapshot _seedSnapshot() {
   final now = DateTime.now();
 
@@ -832,12 +991,14 @@ AppSnapshot _seedSnapshot() {
     requestedBy: 'HNI CEO',
     sourceChannel: CommandChannel.dashboard,
     assignedSquad: 'Discovery',
+    assignedPersonaLead: defaultLeadForSquad('Discovery'),
     status: OrderStatus.completed,
     planSummary: '승인 후 분석, 평가, 완료 보고까지 자동 연속 처리.',
     riskProfile: RiskProfile(),
     planApproved: true,
     createdAt: now.subtract(const Duration(hours: 5)),
     updatedAt: now.subtract(const Duration(hours: 4)),
+    selectedPersonas: defaultPersonasForSquad('Discovery'),
     stageRecords: [
       for (final stage in ExecutionStage.values)
         StageRecord(
@@ -892,12 +1053,14 @@ AppSnapshot _seedSnapshot() {
     requestedBy: 'HNI CEO',
     sourceChannel: CommandChannel.telegram,
     assignedSquad: 'Trust & Readiness',
+    assignedPersonaLead: defaultLeadForSquad('Trust & Readiness'),
     status: OrderStatus.approvalPending,
     planSummary: 'smoke checklist를 기준으로 boot부터 completion report까지 연결.',
     riskProfile: RiskProfile(),
     planApproved: false,
     createdAt: now.subtract(const Duration(minutes: 40)),
     updatedAt: now.subtract(const Duration(minutes: 35)),
+    selectedPersonas: defaultPersonasForSquad('Trust & Readiness'),
     stageRecords: [
       StageRecord(
         stage: ExecutionStage.strategicReview,
@@ -985,6 +1148,12 @@ AppSnapshot _seedSnapshot() {
 
 AppSnapshot _normalizeSnapshot(AppSnapshot snapshot) {
   for (final order in snapshot.orders) {
+    if (order.selectedPersonas.isEmpty) {
+      order.selectedPersonas.addAll(
+        defaultPersonasForSquad(order.assignedSquad),
+      );
+    }
+    order.assignedPersonaLead ??= defaultLeadForSquad(order.assignedSquad);
     for (final record in order.stageRecords) {
       if (record.state == StageState.running) {
         record.state = StageState.pending;
@@ -1006,8 +1175,93 @@ AppSnapshot _normalizeSnapshot(AppSnapshot snapshot) {
 
 AppSnapshot _prepareRemoteSnapshot(AppSnapshot snapshot) {
   snapshot.orders.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  for (final order in snapshot.orders) {
+    if (order.selectedPersonas.isEmpty) {
+      order.selectedPersonas.addAll(
+        defaultPersonasForSquad(order.assignedSquad),
+      );
+    }
+    order.assignedPersonaLead ??= defaultLeadForSquad(order.assignedSquad);
+  }
   if (snapshot.selectedOrderId == null && snapshot.orders.isNotEmpty) {
     snapshot.selectedOrderId = snapshot.orders.first.id;
   }
   return snapshot;
+}
+
+AgentGraph _buildAgentGraph(WorkOrder order) {
+  final runningStages = order.stageRecords.where(
+    (item) => item.state == StageState.running,
+  );
+  final currentStageLabel = runningStages.isEmpty
+      ? null
+      : runningStages.first.stage.label;
+  final nodes = agentPersonas.map((descriptor) {
+    final matchingReports = order.reports
+        .where((report) => report.personaLead == descriptor.persona)
+        .toList();
+    final latestSummary = matchingReports.isEmpty
+        ? null
+        : matchingReports.last.summary;
+    return AgentGraphNode(
+      persona: descriptor.persona,
+      group: descriptor.group,
+      title: descriptor.title,
+      focus: descriptor.focus,
+      status: _agentStatusFor(
+        order: order,
+        persona: descriptor.persona,
+        hasRecentReport: matchingReports.isNotEmpty,
+      ),
+      assigned: order.selectedPersonas.contains(descriptor.persona),
+      isLead: order.assignedPersonaLead == descriptor.persona,
+      reportCount: matchingReports.length,
+      latestSummary: latestSummary,
+      currentStageLabel: currentStageLabel,
+    );
+  }).toList();
+  return AgentGraph(
+    orderId: order.id,
+    orderStatus: order.status.label,
+    assignedSquad: order.assignedSquad,
+    selectedPersonas: List<String>.from(order.selectedPersonas),
+    leadPersona: order.assignedPersonaLead,
+    activeStageLabel: currentStageLabel,
+    providerMode: 'local-store',
+    nodes: nodes,
+  );
+}
+
+AgentNodeStatus _agentStatusFor({
+  required WorkOrder order,
+  required String persona,
+  required bool hasRecentReport,
+}) {
+  final isAssigned = order.selectedPersonas.contains(persona);
+  final isLead = order.assignedPersonaLead == persona;
+  if (isLead && order.status == OrderStatus.planned) {
+    return AgentNodeStatus.lead;
+  }
+  if (order.status == OrderStatus.completed &&
+      (isAssigned || hasRecentReport)) {
+    return AgentNodeStatus.completed;
+  }
+  if (order.status == OrderStatus.hold && (isAssigned || isLead)) {
+    return AgentNodeStatus.blocked;
+  }
+  if ((order.status == OrderStatus.inProgress ||
+          order.status == OrderStatus.evaluation ||
+          order.status == OrderStatus.revise) &&
+      (isAssigned || isLead)) {
+    return AgentNodeStatus.active;
+  }
+  if ((order.status == OrderStatus.approvalPending ||
+          order.status == OrderStatus.planned) &&
+      (isAssigned || isLead)) {
+    return AgentNodeStatus.queued;
+  }
+  if (hasRecentReport) {
+    return AgentNodeStatus.recent;
+  }
+  return AgentNodeStatus.idle;
 }

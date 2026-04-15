@@ -81,6 +81,20 @@ extension CommandChannelX on CommandChannel {
   };
 }
 
+enum AgentNodeStatus { idle, queued, active, blocked, completed, recent, lead }
+
+extension AgentNodeStatusX on AgentNodeStatus {
+  String get label => switch (this) {
+    AgentNodeStatus.idle => 'Idle',
+    AgentNodeStatus.queued => 'Queued',
+    AgentNodeStatus.active => 'Active',
+    AgentNodeStatus.blocked => 'Blocked',
+    AgentNodeStatus.completed => 'Completed',
+    AgentNodeStatus.recent => 'Recent',
+    AgentNodeStatus.lead => 'Lead',
+  };
+}
+
 class RiskProfile {
   RiskProfile({
     this.scopeExpansion = false,
@@ -371,10 +385,12 @@ class WorkOrder {
     required this.reports,
     required this.approvals,
     required this.auditTrail,
+    List<String>? selectedPersonas,
+    this.assignedPersonaLead,
     this.sourceChatId,
     this.sourceSenderId,
     this.sourceUsername,
-  });
+  }) : selectedPersonas = selectedPersonas ?? <String>[];
 
   String id;
   String title;
@@ -394,6 +410,8 @@ class WorkOrder {
   List<ReportEntry> reports;
   List<ApprovalRecord> approvals;
   List<AuditEntry> auditTrail;
+  List<String> selectedPersonas;
+  String? assignedPersonaLead;
   String? sourceChatId;
   String? sourceSenderId;
   String? sourceUsername;
@@ -441,6 +459,8 @@ class WorkOrder {
     'reports': reports.map((item) => item.toJson()).toList(),
     'approvals': approvals.map((item) => item.toJson()).toList(),
     'auditTrail': auditTrail.map((item) => item.toJson()).toList(),
+    'selectedPersonas': selectedPersonas,
+    'assignedPersonaLead': assignedPersonaLead,
     'sourceChatId': sourceChatId,
     'sourceSenderId': sourceSenderId,
     'sourceUsername': sourceUsername,
@@ -478,6 +498,10 @@ class WorkOrder {
       auditTrail: (json['auditTrail'] as List<dynamic>? ?? const [])
           .map((item) => AuditEntry.fromJson(item as Map<String, dynamic>))
           .toList(),
+      selectedPersonas: (json['selectedPersonas'] as List<dynamic>? ?? const [])
+          .map((item) => item.toString())
+          .toList(),
+      assignedPersonaLead: json['assignedPersonaLead'] as String?,
       sourceChatId: json['sourceChatId'] as String?,
       sourceSenderId: json['sourceSenderId'] as String?,
       sourceUsername: json['sourceUsername'] as String?,
@@ -588,6 +612,112 @@ class PendingApprovalItem {
 
   final WorkOrder order;
   final ApprovalRecord approval;
+}
+
+class AgentGraphNode {
+  AgentGraphNode({
+    required this.persona,
+    required this.group,
+    required this.title,
+    required this.focus,
+    required this.status,
+    required this.assigned,
+    required this.isLead,
+    required this.reportCount,
+    this.latestSummary,
+    this.currentStageLabel,
+  });
+
+  final String persona;
+  final String group;
+  final String title;
+  final String focus;
+  final AgentNodeStatus status;
+  final bool assigned;
+  final bool isLead;
+  final int reportCount;
+  final String? latestSummary;
+  final String? currentStageLabel;
+
+  Map<String, dynamic> toJson() => {
+    'persona': persona,
+    'group': group,
+    'title': title,
+    'focus': focus,
+    'status': status.name,
+    'assigned': assigned,
+    'isLead': isLead,
+    'reportCount': reportCount,
+    'latestSummary': latestSummary,
+    'currentStageLabel': currentStageLabel,
+  };
+
+  factory AgentGraphNode.fromJson(Map<String, dynamic> json) {
+    return AgentGraphNode(
+      persona: json['persona'] as String? ?? '',
+      group: json['group'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      focus: json['focus'] as String? ?? '',
+      status: AgentNodeStatus.values.byName(
+        json['status'] as String? ?? AgentNodeStatus.idle.name,
+      ),
+      assigned: json['assigned'] == true,
+      isLead: json['isLead'] == true,
+      reportCount: (json['reportCount'] as num?)?.toInt() ?? 0,
+      latestSummary: json['latestSummary'] as String?,
+      currentStageLabel: json['currentStageLabel'] as String?,
+    );
+  }
+}
+
+class AgentGraph {
+  AgentGraph({
+    required this.orderId,
+    required this.orderStatus,
+    required this.assignedSquad,
+    required this.selectedPersonas,
+    required this.nodes,
+    this.leadPersona,
+    this.activeStageLabel,
+    this.providerMode,
+  });
+
+  final String orderId;
+  final String orderStatus;
+  final String assignedSquad;
+  final List<String> selectedPersonas;
+  final List<AgentGraphNode> nodes;
+  final String? leadPersona;
+  final String? activeStageLabel;
+  final String? providerMode;
+
+  Map<String, dynamic> toJson() => {
+    'orderId': orderId,
+    'orderStatus': orderStatus,
+    'assignedSquad': assignedSquad,
+    'selectedPersonas': selectedPersonas,
+    'leadPersona': leadPersona,
+    'activeStageLabel': activeStageLabel,
+    'providerMode': providerMode,
+    'nodes': nodes.map((item) => item.toJson()).toList(),
+  };
+
+  factory AgentGraph.fromJson(Map<String, dynamic> json) {
+    return AgentGraph(
+      orderId: json['orderId'] as String? ?? '',
+      orderStatus: json['orderStatus'] as String? ?? '',
+      assignedSquad: json['assignedSquad'] as String? ?? '',
+      selectedPersonas: (json['selectedPersonas'] as List<dynamic>? ?? const [])
+          .map((item) => item.toString())
+          .toList(),
+      leadPersona: json['leadPersona'] as String?,
+      activeStageLabel: json['activeStageLabel'] as String?,
+      providerMode: json['providerMode'] as String?,
+      nodes: (json['nodes'] as List<dynamic>? ?? const [])
+          .map((item) => AgentGraphNode.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }
 
 DateTime? _dateFromJson(Object? rawValue) {

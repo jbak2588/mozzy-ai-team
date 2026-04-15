@@ -1,6 +1,14 @@
 import 'models.dart';
 
-enum ParsedCommandType { newOrder, approve, hold, resume, status, help, invalid }
+enum ParsedCommandType {
+  newOrder,
+  approve,
+  hold,
+  resume,
+  status,
+  help,
+  invalid,
+}
 
 class ParsedCommand {
   ParsedCommand({
@@ -71,10 +79,7 @@ class CommandParser {
           error: 'Usage: /approve WO-001',
         );
       }
-      return ParsedCommand(
-        type: ParsedCommandType.approve,
-        orderId: orderId,
-      );
+      return ParsedCommand(type: ParsedCommandType.approve, orderId: orderId);
     }
 
     if (value.startsWith('/hold')) {
@@ -101,10 +106,7 @@ class CommandParser {
           error: 'Usage: /resume WO-001',
         );
       }
-      return ParsedCommand(
-        type: ParsedCommandType.resume,
-        orderId: orderId,
-      );
+      return ParsedCommand(type: ParsedCommandType.resume, orderId: orderId);
     }
 
     if (value.startsWith('/status')) {
@@ -115,10 +117,7 @@ class CommandParser {
           error: 'Usage: /status WO-001',
         );
       }
-      return ParsedCommand(
-        type: ParsedCommandType.status,
-        orderId: orderId,
-      );
+      return ParsedCommand(type: ParsedCommandType.status, orderId: orderId);
     }
 
     return ParsedCommand(

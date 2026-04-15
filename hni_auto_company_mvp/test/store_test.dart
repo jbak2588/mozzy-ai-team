@@ -29,11 +29,14 @@ void main() {
 
     await store.approveApproval(order.id, planApproval!.id);
 
-    final completedOrder = store.orders.firstWhere((item) => item.id == order.id);
+    final completedOrder = store.orders.firstWhere(
+      (item) => item.id == order.id,
+    );
     expect(completedOrder.status, OrderStatus.completed);
     expect(
-      completedOrder.stageRecords
-          .every((record) => record.state == StageState.completed),
+      completedOrder.stageRecords.every(
+        (record) => record.state == StageState.completed,
+      ),
       isTrue,
     );
     expect(
@@ -73,7 +76,9 @@ void main() {
     final riskApproval = heldOrder.pendingApproval(ApprovalType.risk)!;
     await store.approveApproval(order.id, riskApproval.id);
 
-    final completedOrder = store.orders.firstWhere((item) => item.id == order.id);
+    final completedOrder = store.orders.firstWhere(
+      (item) => item.id == order.id,
+    );
     expect(completedOrder.status, OrderStatus.completed);
   });
 }

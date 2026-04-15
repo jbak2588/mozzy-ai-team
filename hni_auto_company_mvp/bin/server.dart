@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:hni_auto_company_mvp/src/ai_orchestrator.dart';
 import 'package:hni_auto_company_mvp/src/backend_service.dart';
 import 'package:hni_auto_company_mvp/src/telegram_integration.dart';
 
@@ -28,15 +29,27 @@ Future<void> main(List<String> args) async {
         'HNI_BACKEND_STATE_FILE',
         defaultValue: '.hni_auto_company/backend_state.json',
       );
+  final orchestratorBaseUrl =
+      Platform.environment['HNI_AI_ORCHESTRATOR_BASE_URL'] ??
+      const String.fromEnvironment(
+        'HNI_AI_ORCHESTRATOR_BASE_URL',
+        defaultValue: '',
+      );
 
   final repository = FileBackendSnapshotRepository(File(filePath));
   final telegram = TelegramIntegration(
     config: TelegramIntegrationConfig.fromEnvironment(),
   );
+  final authBootstrap = AuthBootstrapConfig.fromEnvironment();
+  final orchestrator = orchestratorBaseUrl.trim().isEmpty
+      ? null
+      : AiOrchestratorClient(baseUrl: orchestratorBaseUrl.trim());
   final service = await AutoCompanyBackendService.load(
     repository,
     stageDelay: Duration(milliseconds: stageDelayMs),
     telegramIntegration: telegram.isConfigured ? telegram : null,
+    orchestrator: orchestrator,
+    authBootstrap: authBootstrap,
   );
   final server = await AutoCompanyBackendService.serve(
     service: service,
@@ -54,4 +67,15 @@ Future<void> main(List<String> args) async {
               : 'Telegram integration enabled at ${telegram.config.webhookPath}'
         : 'Telegram integration disabled (no HNI_TELEGRAM_BOT_TOKEN)',
   );
+  stdout.writeln(
+    orchestrator == null
+        ? 'AI orchestrator disabled (no HNI_AI_ORCHESTRATOR_BASE_URL)'
+        : 'AI orchestrator enabled at ${orchestrator.baseUrl}',
+  );
+  stdout.writeln(
+    authBootstrap.enabled
+        ? 'Auth bootstrap enabled for ${authBootstrap.role} at ${authBootstrap.email}'
+        : 'Auth bootstrap disabled',
+  );
+  stdout.writeln('Auth provider mode: ${service.authProviderMode}');
 }

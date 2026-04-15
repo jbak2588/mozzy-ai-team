@@ -1,0 +1,25 @@
+[Unit]
+Description=HNI Auto-Company Backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# Replace this with a dedicated non-root service account.
+User=hni_auto_company
+Group=hni_auto_company
+
+WorkingDirectory=/opt/hni_auto_company/hni_auto_company_mvp
+EnvironmentFile=/etc/hni_auto_company/telegram_public.env
+ExecStart=/usr/bin/env dart run bin/server.dart
+
+Restart=on-failure
+RestartSec=5
+
+# Keep the backend private behind the reverse proxy.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

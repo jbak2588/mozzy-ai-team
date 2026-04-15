@@ -27,6 +27,9 @@
   backend-connected mode로 동작한다.
 - approval 이후 stage auto-run은
   backend에서 진행되고 client는 polling으로 따라간다.
+- `HNI_AI_ORCHESTRATOR_BASE_URL`이 있으면
+  same-repo Python Gemini orchestrator를 통해
+  stage summary와 agent graph를 생성한다.
 
 ## Local Run
 
@@ -51,6 +54,102 @@ backend-connected mode로 실행하려면:
 cd hni_auto_company_mvp
 flutter run -d macos --dart-define=API_BASE_URL=http://127.0.0.1:8787
 ```
+
+Chrome/web에서는 same-origin 또는 `API_BASE_URL` 기준으로 실행한다.
+
+```bash
+cd hni_auto_company_mvp
+flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8787
+```
+
+현재 web shell에서 직접 열 수 있는 route:
+
+- `/dashboard/home`
+- `/dashboard/squads`
+- `/dashboard/orders`
+- `/dashboard/reports`
+- `/dashboard/approvals`
+- `/dashboard/channels`
+- `/dashboard/audit`
+- `/auth/login`
+- `/auth/forbidden`
+- `/auth/session-expired`
+
+## Same-Origin Auth Bootstrap
+
+future web dashboard의 1차 auth는
+외부 provider 대신
+same-origin bootstrap session으로 동작한다.
+
+backend env 예시:
+
+```bash
+export HNI_AUTH_BOOTSTRAP_ENABLED=true
+export HNI_AUTH_BOOTSTRAP_DEFAULT_AUTHENTICATED=false
+export HNI_AUTH_BOOTSTRAP_EMAIL=admin@humantric.net
+export HNI_AUTH_BOOTSTRAP_NAME="HNI Bootstrap Admin"
+export HNI_AUTH_BOOTSTRAP_ROLE=Admin
+```
+
+지원 endpoint:
+
+- `GET /api/v1/session`
+- `POST /api/v1/session/bootstrap`
+- `POST /api/v1/session/logout`
+- `GET /auth/login`
+- `GET /auth/callback`
+- `GET /auth/logout`
+
+주의:
+
+- 이번 단계는 non-production bootstrap session만 포함한다.
+- 실제 OIDC/provider 연결은 아직 구현하지 않았다.
+- business API role enforcement는 selected endpoint에 한해 1차 구현했다.
+- web shell은 session payload를 기준으로 `/dashboard/*` route gate를 계산한다.
+- remote mode는 비로그인 상태에서
+  빈 shell로 먼저 기동하고,
+  `Bootstrap Session` 이후
+  remote snapshot을 다시 연결한다.
+- provider adapter 1차는
+  `bootstrap`과 `mock_oidc`만 지원한다.
+
+provider adapter 예시 env:
+
+```bash
+export HNI_AUTH_PROVIDER_MODE=mock_oidc
+export HNI_AUTH_PROVIDER_DEFAULT_RETURN_TO=/dashboard/home
+export HNI_AUTH_MOCK_EMAIL=lead@humantric.net
+export HNI_AUTH_MOCK_NAME="OIDC Lead"
+export HNI_AUTH_MOCK_ROLE=Lead
+```
+
+현재 role+CSRF가 연결된 protected endpoint 예:
+
+- `GET /api/v1/snapshot`
+- `POST /api/v1/orders`
+- `POST /api/v1/orders/:orderId/approvals/:approvalId/approve`
+- `POST /api/v1/orders/:orderId/hold`
+- `POST /api/v1/orders/:orderId/resume`
+- `POST /api/v1/orders/:orderId/agent-graph/assign`
+- `POST /api/v1/orders/:orderId/agent-graph/dispatch`
+- `POST /api/v1/commands`
+
+## Gemini Orchestrator
+
+same-repo Python service는
+`../services/hni_gemini_orchestrator`에 있다.
+
+backend에서 연동하려면:
+
+```bash
+export HNI_AI_ORCHESTRATOR_BASE_URL=http://127.0.0.1:8091
+cd hni_auto_company_mvp
+dart run bin/server.dart
+```
+
+Python service 자체의 실행 방법은
+루트 [README.md](/Users/jbak2588/mozzy-ai-team/README.md)와
+`services/hni_gemini_orchestrator/README.md`를 본다.
 
 ## Telegram Live Mode
 
@@ -218,6 +317,9 @@ public webhook 방식으로 가려면
 6. backend가 외부에서 도달 가능한 host/port 또는 reverse proxy
 7. `set-webhook` helper 호출
 8. polling mode 비활성화
+
+실서버 배포 절차와 예제 파일은
+`docs/TELEGRAM_PUBLIC_WEBHOOK_DEPLOY.md`를 본다.
 
 ## Verification
 

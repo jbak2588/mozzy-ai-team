@@ -135,11 +135,37 @@ void main() {
         ),
       );
     final service = await _loadService(fakeApi: fakeApi);
+    final handler = service.handler();
+    final bootstrapResponse = await handler.call(
+      Request(
+        'POST',
+        Uri.parse('http://127.0.0.1/api/v1/session/bootstrap'),
+        headers: const {'content-type': 'application/json'},
+        body: jsonEncode({'returnTo': '/dashboard/home'}),
+      ),
+    );
+    final cookie = bootstrapResponse.headers['set-cookie']!.split(';').first;
+    final sessionResponse = await handler.call(
+      Request(
+        'GET',
+        Uri.parse('http://127.0.0.1/api/v1/session'),
+        headers: {'cookie': cookie},
+      ),
+    );
+    final sessionBody =
+        jsonDecode(await sessionResponse.readAsString()) as Map<String, dynamic>;
+    final session = sessionBody['session'] as Map<String, dynamic>;
+    final csrfToken = session['csrfToken'] as String;
 
-    final response = await service.handler().call(
+    final response = await handler.call(
       Request(
         'POST',
         Uri.parse('http://127.0.0.1/api/v1/integrations/telegram/poll-once'),
+        headers: {
+          'content-type': 'application/json',
+          'cookie': cookie,
+          'x-hni-csrf-token': csrfToken,
+        },
       ),
     );
 

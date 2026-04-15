@@ -87,6 +87,8 @@ v1.1은 기존 로컬 MVP를 다음 구조로 확장한 버전이다.
 - tests:
   `hni_auto_company_mvp/test/backend_service_test.dart`,
   `hni_auto_company_mvp/test/http_repository_test.dart`
+- repository mode selection 설계:
+  `docs/04_specs/HNI_REPOSITORY_MODE_SELECTION.md`
 
 ## Run Commands
 

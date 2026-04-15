@@ -682,6 +682,573 @@
   local-only 원칙을 계속 지켜야 하기 때문이다.
 * **Status:** ACTIVE
 
+### D-053
+
+* **Topic:** Telegram public webhook 배포 준비 원칙
+* **Decision:** public webhook 배포 준비는
+  placeholder 기반 아티팩트와 문서까지만
+  저장소에 추적하고,
+  실제 token, secret, sender/chat id,
+  실서비스 env 파일은 git에 커밋하지 않는다.
+  또한 public webhook profile에서는
+  `HNI_TELEGRAM_POLLING_ENABLED=false`를 강제한다.
+* **Reason:** 사용자는 공개 도메인 배포 준비물을 원하지만,
+  production secret과 실운영 값은
+  문서/예제 파일에 남기면 안 되며,
+  polling과 webhook 동시 운영은
+  Telegram update source를 혼동시킬 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-054
+
+* **Topic:** 공개 webhook 배포 경계
+* **Decision:** 이번 범위는
+  `ai.humantric.net` 예시 기준의
+  nginx reverse proxy, systemd service, env example,
+  helper script, deployment guide 준비까지로 제한한다.
+  실제 DNS 연결, TLS 발급,
+  reverse proxy 적용, public webhook 등록은
+  production/system-facing action이므로
+  사용자가 서버에서 별도로 수행한다.
+* **Reason:** 현재 승인 범위는 배포 준비 아티팩트 생성이지,
+  실제 외부 노출이나 서버 설정 집행이 아니기 때문이다.
+* **Status:** ACTIVE
+
+### D-055
+
+* **Topic:** `bling` 병렬 제어 해석
+* **Decision:** 현재 HNI auto-company MVP는
+  `bling`을 병렬 작업 대상으로
+  문서상/운영상 추적할 수는 있지만,
+  실제 repo를 직접 제어하는 live control plane은 아니다.
+  현재 구현은 work order, branch/product target, channel intake까지이며,
+  GitHub live sync와 다중 repo 실행 제어는
+  아직 범위 밖으로 유지한다.
+* **Reason:** 프로그램 스펙에는
+  `GitHub repo links`, `Mozzy repo state read model`이 있지만,
+  v1.1 범위 문서에서는
+  `GitHub live sync`가 명시적으로 out of scope이기 때문이다.
+* **Status:** ACTIVE
+
+### D-056
+
+* **Topic:** `bling` landing과 Telegram 내부 도메인 연결 방식
+* **Decision:** `bling/public/index.html`은
+  `humantric.net` 루트용 정적 landing page일 뿐이며,
+  그 파일 자체로 Telegram webhook/internal domain endpoint를
+  수용할 수는 없다.
+  Telegram용 내부 도메인은
+  별도 subdomain 예: `ai.humantric.net`로 분리하거나,
+  같은 host를 쓸 경우
+  `firebase.json` catchall rewrite보다 앞선
+  전용 backend rewrite/proxy를 추가해야 한다.
+* **Reason:** 현재 Firebase Hosting은
+  `/app/** -> /app/index.html`,
+  그 외 `** -> /index.html`로 고정돼 있어
+  별도 backend route가 없으면
+  Telegram path도 landing page로 흡수되기 때문이다.
+* **Status:** ACTIVE
+
+### D-057
+
+* **Topic:** HNI 공개 도메인 정식 분리 원칙
+* **Decision:** 공개 운영 구조는
+  `humantric.net`을 Mozzy/HNI marketing landing과
+  web preview 진입점으로 유지하고,
+  `ai.humantric.net`을
+  HNI auto-company control plane과
+  Telegram webhook/backend 전용 도메인으로 분리한다.
+  landing host에는
+  Telegram webhook를 직접 수용하지 않고,
+  필요한 경우 CTA나 deep link만 둔다.
+* **Reason:** Firebase Hosting catchall rewrite 구조와
+  backend secret/webhook 운영 요구를 분리해야
+  routing 충돌과 보안 혼선을 줄일 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-058
+
+* **Topic:** `ai.humantric.net` route namespace 원칙
+* **Decision:** `ai.humantric.net`에서는
+  operator UI를 `/dashboard/**`,
+  auth flow를 `/auth/**`,
+  application API를 `/api/v1/**`,
+  Telegram integration을 `/api/v1/integrations/telegram/**`
+  아래로 고정한다.
+  root `/`는
+  dashboard 진입 redirect 또는
+  최소 소개/health entry로만 사용한다.
+* **Reason:** future web dashboard를 붙일 때
+  UI route와 webhook/API route가 섞이면
+  reverse proxy, auth, observability 구성이 불안정해지기 때문이다.
+* **Status:** ACTIVE
+
+### D-059
+
+* **Topic:** future web dashboard 권한 계층
+* **Decision:** future web dashboard의 기본 권한 계층은
+  `Public -> Operator -> Lead -> Approver -> CEO -> Admin -> Machine`
+  순서로 둔다.
+  `/dashboard/**`는 최소 Operator부터,
+  전략/승인 관련 route는 Approver 또는 CEO,
+  webhook는 Machine 전용으로 본다.
+* **Reason:** 화면별 권한을 ad-hoc로 붙이면
+  route 설계와 auth gate가 쉽게 흔들리므로,
+  일관된 상위 role 계층이 먼저 있어야 하기 때문이다.
+* **Status:** ACTIVE
+
+### D-060
+
+* **Topic:** repository bootstrap 해석
+* **Decision:** 현재 `main.dart`의
+  `apiBaseUrl.isEmpty ? FileAppRepository() : HttpAppRepository(...)`
+  분기는
+  `로컬 단독 실행`과 `backend-connected 실행`을 가르는
+  v1.1용 runtime mode selector로 해석한다.
+  future web/dashboard 단계에서는
+  file repository를 기본값으로 확장하지 않고,
+  명시적 mode validation 또는 factory로 진화시키는 방향을 기본 원칙으로 둔다.
+* **Reason:** `API_BASE_URL` 유무만으로는
+  v1.1 desktop에는 충분하지만,
+  future web/admin/runtime profile이 늘어나면
+  mode 해석이 모호해질 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-061
+
+* **Topic:** future web dashboard의 human auth 방식
+* **Decision:** `ai.humantric.net`의
+  human operator 인증은
+  OIDC Authorization Code + PKCE를 기본으로 두고,
+  토큰을 브라우저 장기 저장소에 직접 남기기보다
+  server-issued session cookie 기반으로 운영하는 방향을
+  기본 원칙으로 둔다.
+  Telegram webhook 같은 machine path는
+  이 human OIDC 세션과 분리한다.
+* **Reason:** control plane은
+  일반 공개 웹보다 보안 민감도가 높고,
+  same-origin dashboard/API 구조에서는
+  server-side session이 route gate와
+  ops 보호 정책을 더 단순하게 만들기 때문이다.
+* **Status:** ACTIVE
+
+### D-062
+
+* **Topic:** HNI auth provider 선택 우선순위
+* **Decision:** future web dashboard의
+  auth provider는
+  "기존 HNI workforce IdP 재사용 여부"를
+  최우선 기준으로 본다.
+  별도 신규 선택이 필요하면
+  1차 비교축은
+  `OIDC + PKCE 적합성`,
+  `group/role claim 매핑`,
+  `MFA/step-up`,
+  `운영 난이도`,
+  `ai.humantric.net same-origin session 적합성`으로 둔다.
+* **Reason:** provider를 브랜드 선호로 먼저 고르면
+  실제 내부 운영체계와
+  role mapping 요구가 뒤로 밀리기 때문이다.
+* **Status:** ACTIVE
+
+### D-063
+
+* **Topic:** auth provider provisional recommendation
+* **Decision:** 현재 문서 기준 provisional recommendation은
+  "기존 workforce IdP 재사용 우선"이고,
+  신규 선택이 필요하면
+  internal operator dashboard 중심에서는
+  `Microsoft Entra ID`와 `Okta`를 primary candidate로,
+  B2B 조직 분리와 강한 extensibility가 핵심이면
+  `Auth0`를 conditional candidate로 본다.
+  `Google Cloud Identity Platform / IAP` 경로는
+  control plane을 Google Cloud 운영모델에 더 강하게 붙일 때만
+  별도 검토한다.
+* **Reason:** 현재 HNI 요구는
+  외부 대고객 identity보다
+  내부 operator control plane, role mapping,
+  step-up protection과 더 가깝기 때문이다.
+* **Status:** ACTIVE
+
+### D-064
+
+* **Topic:** future web dashboard wireframe 원칙
+* **Decision:** `ai.humantric.net`의
+  future web dashboard wireframe은
+  marketing-style landing이 아니라
+  desktop-first internal ops console로 설계한다.
+  핵심 화면은
+  `좌측 고정 nav + 상단 context bar + 중앙 primary pane + 우측 secondary pane`
+  기준의 split-pane 구조를 우선한다.
+* **Reason:** HNI control plane은
+  미려한 소개형 화면보다
+  order, approval, report, channel 상태를
+  동시에 읽고 조작하는 밀도 높은 운영 화면이 더 적합하기 때문이다.
+* **Status:** ACTIVE
+
+### D-065
+
+* **Topic:** auth provider integration sequencing 원칙
+* **Decision:** provider별 integration sequence는
+  vendor SDK 중심으로 화면 로직을 퍼뜨리기보다,
+  `provider registration -> redirect/callback ->`
+  `code exchange -> claim normalization ->`
+  `internal session issue`
+  순서의
+  HNI 공통 control plane 흐름으로 정리한다.
+  provider 차이는
+  등록값, issuer/endpoint, logout 규칙,
+  claim source 차이로 국한한다.
+* **Reason:** 실제 provider가 바뀌어도
+  HNI backend의 session/role 모델은
+  최대한 동일해야
+  향후 구현과 교체 비용이 낮아지기 때문이다.
+* **Status:** ACTIVE
+
+### D-066
+
+* **Topic:** future web dashboard component 분해 원칙
+* **Decision:** future web dashboard component map은
+  `route-aligned feature modules + shared control-shell components`
+  구조를 기본으로 둔다.
+  즉 `/dashboard/orders`, `/dashboard/approvals`,
+  `/dashboard/channels` 같은
+  업무 화면은 feature module로 자르고,
+  nav/topbar/session banner/command dock는
+  공통 shell component로 유지한다.
+* **Reason:** control plane은
+  route별 책임 경계가 분명해야 하고,
+  shell과 feature를 섞으면
+  auth gate, API contract, UI 상태 관리가 쉽게 비대해지기 때문이다.
+* **Status:** ACTIVE
+
+### D-067
+
+* **Topic:** web implementation backlog 우선순위
+* **Decision:** future web dashboard의
+  첫 구현 순서는
+  `app_shell -> auth/session -> home -> orders -> approvals -> channels`
+  를 기본값으로 둔다.
+  이후 `reports -> mozzy_board -> strategy/squads/audit`
+  순서로 확장한다.
+* **Reason:** control plane의
+  첫 운영 가치는 로그인 이후
+  작업 현황, 승인, 채널 상태를
+  빠르게 읽고 조작하는 데서 먼저 나오기 때문이다.
+* **Status:** ACTIVE
+
+### D-068
+
+* **Topic:** provider 구현 전략
+* **Decision:** web 구현 첫 단계에서는
+  multi-provider 동시 지원보다
+  HNI 공통 auth contract와
+  primary provider adapter 1개를 먼저 완성한다.
+  두 번째 provider는
+  session/role contract가 닫힌 뒤에만 추가한다.
+* **Reason:** provider abstraction을
+  구현 전부터 넓게 열어두면
+  callback, logout, role mapping, recent-auth가
+  동시에 흔들릴 가능성이 커지기 때문이다.
+* **Status:** ACTIVE
+
+### D-069
+
+* **Topic:** auth/session API boundary
+* **Decision:** future web dashboard의
+  human auth 계약은
+  browser redirect route는 `/auth/*`,
+  JSON session discovery/termination은
+  `/api/v1/session`과 `/api/v1/session/logout`
+  으로 분리한다.
+  provider redirect와 callback은 browser route가 담당하고,
+  frontend bootstrap과 route gate는
+  same-origin session endpoint를 기준으로 상태를 읽는다.
+* **Reason:** OIDC redirect와 UI bootstrap을
+  한 endpoint 계층에 섞으면
+  browser navigation과 JSON contract가 함께 흔들리기 때문이다.
+* **Status:** ACTIVE
+
+### D-070
+
+* **Topic:** session contract shape
+* **Decision:** session API는
+  `HttpOnly + Secure + SameSite` session cookie를 기준으로 하고,
+  `GET /api/v1/session`에서
+  `authenticated`, `principal`, `capabilities`,
+  `expiresAt`, `recentAuthExpiresAt`, `csrfToken`
+  형태의 same-origin bootstrap payload를 반환한다.
+  mutating API는
+  session cookie 외에 `X-HNI-CSRF-Token`을 요구한다.
+* **Reason:** HNI control plane은
+  browser token 저장을 최소화하면서도
+  route gate, capability rendering,
+  CSRF 보호를 동시에 만족해야 하기 때문이다.
+* **Status:** ACTIVE
+
+### D-071
+
+* **Topic:** Mozzy-ai-team vNext 제품 정의
+* **Decision:** `Mozzy-ai-team`은
+  HNI용 `HNI-auto-company`를
+  web + channel 기반으로 확장한
+  14-persona AI agent 협업 control plane으로 정의한다.
+  루트 `README.md`도 이 정의를 기준으로
+  제품/아키텍처/로드맵/문서 허브 역할로 재작성한다.
+* **Reason:** 현재 저장소는 이미
+  desktop MVP, Telegram, web spec, backend 구조를 포함하고 있어
+  단순 운영 문서 저장소 설명으로는
+  실제 제품 범위를 반영하지 못하기 때문이다.
+* **Status:** ACTIVE
+
+### D-072
+
+* **Topic:** Gemini 실행 엔진 위치
+* **Decision:** Gemini 실행 엔진은
+  `services/hni_gemini_orchestrator/` 아래의
+  same-repo Python service로 둔다.
+  Dart backend는
+  `HNI_AI_ORCHESTRATOR_BASE_URL`만 알고
+  `GEMINI_API_KEY`는 알지 못한다.
+* **Reason:** Gemini key를
+  Flutter client와 Dart control backend에서 분리해
+  server-side secret 경계를 분명히 해야 하기 때문이다.
+* **Status:** ACTIVE
+
+### D-073
+
+* **Topic:** Gemini key 정책
+* **Decision:** 1차 AI provider는 Gemini 단일 엔진으로 시작하되,
+  실제 key는 Python service env에만 두고
+  tracked 파일과 Flutter bundle에는 넣지 않는다.
+  key가 없을 때는 deterministic fallback으로
+  skeleton 검증을 계속할 수 있게 한다.
+* **Reason:** 초기 구현에서는
+  runtime 연결과 control plane contract를 먼저 닫아야 하고,
+  실제 key 주입은 더 높은 운영 통제를 요구하기 때문이다.
+* **Status:** ACTIVE
+
+### D-074
+
+* **Topic:** 14-agent 조직도 역할
+* **Decision:** 14-agent 조직도는
+  read-only 가시화가 아니라
+  assign / dispatch / hold / report jump를 포함한
+  interactive control panel로 취급한다.
+* **Reason:** HNI CEO와 operator가
+  조직도에서 바로 작업 흐름을 제어할 수 있어야
+  `Mozzy-ai-team`의 차별점이 살아나기 때문이다.
+* **Status:** ACTIVE
+
+### D-075
+
+* **Topic:** Flutter web bootstrap 원칙
+* **Decision:** Flutter app은
+  desktop에서는 file mode fallback을 유지하되,
+  web에서는 local file persistence를 사용하지 않고
+  same-origin 또는 `API_BASE_URL` 기반의
+  HTTP repository만 사용한다.
+* **Reason:** web target에서는
+  `dart:io` 기반 file persistence가 성립하지 않고,
+  control plane도 결국 backend-connected 운영을 전제로 해야 하기 때문이다.
+* **Status:** ACTIVE
+
+### D-076
+
+* **Topic:** future web route bootstrap 방식
+* **Decision:** future web dashboard의 1차 구현은
+  `go_router` 기반 route-driven shell로 진행하고,
+  `/dashboard/*` direct route와
+  `/auth/*` placeholder route를 먼저 연다.
+  실제 OIDC/provider enforcement는
+  다음 slice로 미루고,
+  이번 단계에서는 browser URL, sidebar navigation,
+  web build 안정성만 닫는다.
+* **Reason:** web dashboard는
+  먼저 deep link와 same-origin shell이 성립해야
+  이후 auth/session contract와 route gate를
+  실제 코드로 연결할 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-077
+
+* **Topic:** same-origin auth bootstrap 방식
+* **Decision:** 첫 auth 구현 slice는
+  외부 OIDC/provider 연동 대신
+  same-origin bootstrap session으로 진행한다.
+  backend는
+  `/api/v1/session`,
+  `/api/v1/session/bootstrap`,
+  `/api/v1/session/logout`
+  JSON endpoint를 제공하고,
+  frontend는 이 session payload로
+  web route gate를 계산한다.
+* **Reason:** provider 연결 전에도
+  browser route, role gate, session bootstrap,
+  logout/redirect 흐름을 먼저 닫아야
+  이후 OIDC adapter를 안전하게 붙일 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-078
+
+* **Topic:** auth bootstrap 보안 경계
+* **Decision:** 이번 same-origin auth slice는
+  non-production bootstrap session만 포함하고,
+  실제 OIDC/provider 연결과
+  business API 전면 role enforcement는
+  후속 단계로 남긴다.
+  현재 단계의 목적은
+  browser shell과 session contract 검증이다.
+* **Reason:** 외부 provider와 전면 API gate를
+  한 번에 묶으면 인증/인가 변경 영향이 커지므로,
+  우선 route bootstrap과 session contract부터
+  분리 구현하는 것이 더 안전하기 때문이다.
+* **Status:** ACTIVE
+
+### D-079
+
+* **Topic:** business API role enforcement rollout
+* **Decision:** same-origin bootstrap 다음 단계의
+  인가 강화는 selected business API에 한해
+  단계적으로 적용한다.
+  현재 1차 enforcement 대상은
+  `/api/v1/snapshot`, `/api/v1/orders`,
+  approval/hold/resume,
+  agent graph assign/dispatch,
+  `/api/v1/commands`,
+  Telegram status/set/delete/poll-once이며,
+  최소 role과 CSRF를 함께 요구한다.
+  UI action button도 같은 role matrix로 맞춘다.
+  반면 machine ingress인
+  Telegram webhook는
+  human session/CSRF gate에 넣지 않는다.
+* **Reason:** human operator path는
+  단계적으로 강화하되,
+  live channel ingress와 machine callback까지
+  한 번에 같은 gate로 묶으면
+  운영 경계가 오히려 불분명해지기 때문이다.
+* **Status:** ACTIVE
+
+### D-080
+
+* **Topic:** login-first bootstrap 기본값
+* **Decision:** same-origin bootstrap의 기본 동작은
+  `defaultAuthenticated=true`가 아니라
+  anonymous + explicit bootstrap login으로 둔다.
+  `HNI_AUTH_BOOTSTRAP_DEFAULT_AUTHENTICATED` 기본값은
+  `false`로 내리고,
+  remote web shell은 비로그인 상태에서
+  빈 shell로 먼저 기동한 뒤
+  login 후 reconnect로 snapshot을 붙인다.
+* **Reason:** bootstrap 기본값이
+  자동 인증 상태로 남아 있으면
+  향후 OIDC/provider 연동 이전에도
+  login-first 흐름을 검증할 수 없고,
+  stricter auth 방향과도 충돌하기 때문이다.
+* **Status:** ACTIVE
+
+### D-081
+
+* **Topic:** provider adapter 1차 범위
+* **Decision:** provider adapter 1차는
+  browser auth route와 adapter abstraction까지 구현하되,
+  현재 지원 모드는
+  `bootstrap`과 `mock_oidc`로 제한한다.
+  backend는
+  `/auth/login`, `/auth/callback`, `/auth/logout`
+  route를 제공하고,
+  session issuance는 tokenized server-side session map으로 관리한다.
+  실제 external provider token exchange와
+  production IdP 연결은
+  다음 단계로 남긴다.
+* **Reason:** route/callback/session issuance 뼈대를 먼저 고정해야
+  이후 Entra/Okta/Auth0 같은 실제 provider를 붙일 때
+  session/redirect 구조를 다시 뜯지 않아도 되기 때문이다.
+* **Status:** ACTIVE
+
+### D-082
+
+* **Topic:** 로컬 프런트엔드 프리뷰 실행 방식
+* **Decision:** 사용자가 화면 확인을 요청한 경우
+  local preview는
+  Dart backend(`127.0.0.1:8787`)와
+  Flutter web client를 같은 머신에서 함께 띄우는 방식으로 처리한다.
+  가능하면 production 배포 대신
+  로컬 browser preview를 우선 사용한다.
+* **Reason:** 현재 승인 범위 안에서
+  프런트엔드 화면을 가장 빠르고 안전하게 확인하는 방법이
+  local backend + web client 조합이기 때문이다.
+* **Status:** ACTIVE
+
+### D-083
+
+* **Topic:** backend auth/session 런타임 경계
+* **Decision:** `bin/server.dart`에서 사용하는
+  auth/session 모델은
+  Flutter `foundation`에 의존하지 않는
+  pure Dart 계층으로 유지하고,
+  `ChangeNotifier` 기반 controller만
+  Flutter 쪽에 둔다.
+* **Reason:** local backend는
+  `dart run bin/server.dart`로 바로 기동 가능해야 하며,
+  서버 런타임이 `dart:ui`를 요구하면
+  preview와 운영 검증 경로가 즉시 막히기 때문이다.
+* **Status:** ACTIVE
+
+### D-084
+
+* **Topic:** local preview 수정 후 최소 검증 기준
+* **Decision:** local preview를 위해
+  backend/runtime 코드를 손댄 경우
+  최소한 `curl /api/v1/session` 응답과
+  관련 `flutter test` 타깃을 함께 확인한다.
+* **Reason:** 화면만 뜬다고 끝내면
+  backend session/bootstrap 경로가
+  실제로 깨졌는지 놓치기 쉽기 때문이다.
+* **Status:** ACTIVE
+
+### D-085
+
+* **Topic:** local web preview의 cross-origin session 규칙
+* **Decision:** `flutter run -d chrome --dart-define=API_BASE_URL=...`
+  형태의 local preview에서는
+  backend가 loopback origin에 대해
+  `OPTIONS` preflight와 credentialed CORS response를 제공해야 한다.
+* **Reason:** browser는
+  `127.0.0.1:3000 -> 127.0.0.1:8787` 요청을
+  cross-origin으로 처리하므로,
+  preflight와 `Access-Control-Allow-Credentials`
+  없이는 session bootstrap 자체가 실패하기 때문이다.
+* **Status:** ACTIVE
+
+### D-086
+
+* **Topic:** Flutter web remote client HTTP 기본값
+* **Decision:** Flutter web에서
+  `API_BASE_URL`이 비어 있지 않은 remote mode는
+  credential 포함 `BrowserClient`를 기본 HTTP client로 사용한다.
+  IO/runtime은 기존 일반 `http.Client`를 유지한다.
+* **Reason:** session cookie가
+  browser credential jar를 통해
+  유지/재전송되어야 이후 snapshot/orders/approvals 호출도
+  같은 로그인 상태를 재사용할 수 있기 때문이다.
+* **Status:** ACTIVE
+
+### D-087
+
+* **Topic:** 현재 로컬 상태 publish 범위 해석
+* **Decision:** 사용자가
+  "현재 로컬상태 커밋 + 푸시"를 명시적으로 요청한 경우,
+  현재 worktree 전체를
+  하나의 publish scope로 보고
+  해당 상태 그대로 커밋/푸시한다.
+* **Reason:** 이 표현은
+  부분 파일 선택보다
+  현 시점의 전체 로컬 상태 반영 의도가 더 강하므로,
+  범위를 다시 쪼개 묻는 것보다
+  그대로 반영하는 쪽이 사용자 의도에 더 가깝기 때문이다.
+* **Status:** ACTIVE
+
 ---
 
 ## Open Questions

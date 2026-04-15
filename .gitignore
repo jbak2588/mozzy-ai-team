@@ -2,3 +2,6 @@
 .vscode/
 output/
 .hni_auto_company/
+.pytest_cache/
+.venv/
+__pycache__/
