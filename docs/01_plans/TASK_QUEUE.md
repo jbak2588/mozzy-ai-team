@@ -140,7 +140,7 @@
 | P-136 | provider adapter 운영 문서 반영 | DONE | P-135 | contract + README + logs |
 | P-137 | 로컬 web 프런트엔드 프리뷰 실행 | DONE | P-136 | backend runtime fix + local backend + Chrome preview + auth tests |
 | P-138 | web bootstrap dashboard 진입 실패 수정 | DONE | P-137 | CORS + browser credentials fix + web build verification |
-| P-139 | 현재 로컬 상태 커밋 및 원격 푸시 | IN_PROGRESS | P-138 | git commit + push |
+| P-139 | 현재 로컬 상태 커밋 및 원격 푸시 | DONE | P-138 | commit `54915a4` + push `origin/main` |
 
 ## Status Legend
 

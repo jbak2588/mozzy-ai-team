@@ -1249,6 +1249,20 @@
   그대로 반영하는 쪽이 사용자 의도에 더 가깝기 때문이다.
 * **Status:** ACTIVE
 
+### D-088
+
+* **Topic:** commit+push 요청과 `gh` 부재 처리
+* **Decision:** 사용자가
+  PR이 아니라
+  commit+push만 요청한 경우에는
+  `gh` CLI 부재를 blocker로 보지 않고
+  표준 `git push`로 publish를 진행한다.
+* **Reason:** 이번 범위의 필수 동작은
+  원격 branch 반영이며,
+  이는 GitHub CLI 없이도
+  기존 origin remote로 충분히 수행 가능하기 때문이다.
+* **Status:** ACTIVE
+
 ---
 
 ## Open Questions

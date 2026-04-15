@@ -1422,11 +1422,19 @@
     현 시점 worktree 전체 publish로 해석
   - `github:yeet` 흐름에 맞춰
     현재 git 상태, branch, remote, 최근 커밋을 확인
-  - 이어서 diff 범위를 요약하고
-    적절한 커밋 메시지로 staging/commit/push를 진행
+  - `gh`가 설치되어 있지 않음을 확인했지만,
+    이번 요청 범위가 PR이 아니라
+    commit+push라서
+    git-only 흐름으로 계속 진행
+  - 전체 worktree를 staging한 뒤
+    `Implement web auth and orchestrator control plane`
+    메시지로 커밋 생성
+  - 이어서 현재 branch `main`을
+    `origin/main`으로 푸시
 - Result:
-  - 진행 중
+  - 전체 로컬 상태가
+    커밋 `54915a4`로 정리됐고
+    `origin/main`까지 푸시 완료됨
 - Next:
-  - 전체 worktree를 staging
-  - 커밋 생성
-  - 현재 branch를 origin으로 푸시
+  - publish 결과를 문서에 반영한 뒤
+    기록 커밋도 원격에 반영한다
